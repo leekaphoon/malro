@@ -1,0 +1,12 @@
+.env.local
+node_modules/
+*.log
+dist/
+
+# 빌드 산출물 — build-demo.js 로 언제든 다시 만든다
+demo-wrapped.html
+saydo-demo.html
+saydo.zip
+
+# 배포 대상 프로젝트 이름 (각자 다르다)
+.pages-project

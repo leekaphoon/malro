@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Saydo</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Saydo">
+<meta name="theme-color" content="#fdfcfb" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1917" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-512.png">
+<style>
+/* ─────────────────────────  design tokens  ───────────────────────── */
+:root{
+  --bg:#fbfaf9; --surface:#ffffff; --surface-2:#f5f3f1; --surface-3:#eeebe8;
+  --text:#1c1a19; --text-2:#57514d; --muted:#8e8681; --faint:#b5aea9;
+  --border:#e9e5e1; --border-strong:#d9d3cd;
+  --accent:#c8453c; --accent-soft:#fdf1f0; --accent-text:#ffffff;
+  --p1:#d1453b; --p2:#e08b18; --p3:#2a6fd4; --p4:#a8a29e;
+  --ok:#3f9c5b; --shadow-sm:0 1px 2px rgba(28,26,25,.05),0 1px 3px rgba(28,26,25,.04);
+  --shadow-md:0 4px 12px rgba(28,26,25,.07),0 1px 3px rgba(28,26,25,.05);
+  --shadow-lg:0 16px 40px rgba(28,26,25,.14),0 3px 10px rgba(28,26,25,.07);
+  --r-sm:7px; --r:11px; --r-lg:16px;
+  --sidebar-w:268px;
+  /* 보드 컬럼 치수 — 한 곳에서 관리한다 (2026-08: 폭·높이 1.3배로 상향) */
+  --col-w:398px;                      /* 306 × 1.3 */
+  --col-h:calc(100dvh - 200px);       /* 아래 여백을 60px 줄여 세로를 늘렸다 */
+  --ease:cubic-bezier(.32,.72,0,1);
+  color-scheme:light;
+}
+/* 다크 팔레트: 시스템 설정(media) 과 명시적 토글(data-theme) 양쪽에서 동작해야 한다.
+   data-theme="light" 가 찍혀 있으면 OS 가 다크여도 라이트가 이긴다. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#191817; --surface:#232120; --surface-2:#2b2927; --surface-3:#35322f;
+    --text:#eeeae7; --text-2:#b9b2ac; --muted:#8d857f; --faint:#655e59;
+    --border:#312e2b; --border-strong:#413d39;
+    --accent:#e0605a; --accent-soft:#3a2422; --accent-text:#ffffff;
+    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#7c7570;
+    --ok:#5cb87a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow-md:0 4px 14px rgba(0,0,0,.4);
+    --shadow-lg:0 18px 44px rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+    --bg:#191817; --surface:#232120; --surface-2:#2b2927; --surface-3:#35322f;
+    --text:#eeeae7; --text-2:#b9b2ac; --muted:#8d857f; --faint:#655e59;
+    --border:#312e2b; --border-strong:#413d39;
+    --accent:#e0605a; --accent-soft:#3a2422; --accent-text:#ffffff;
+    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#7c7570;
+    --ok:#5cb87a;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+    --shadow-md:0 4px 14px rgba(0,0,0,.4);
+    --shadow-lg:0 18px 44px rgba(0,0,0,.55);
+    color-scheme:dark;
+}
+/* ─────────────────  스킨: 야상 (Nocturne)  ─────────────────
+   테마(밝기)와 직교하는 축이다. 야상은 어두운 쪽으로 설계된 팔레트라
+   data-theme 값과 무관하게 항상 어둡게 간다.
+
+   위치가 곧 우선순위다. data-theme 블록들과 특정도가 같으므로(0,2,0)
+   반드시 그 뒤에 와야 이긴다 — 앞에 두면 조용히 무시된다.
+
+   기본 팔레트와 다른 점
+     · 바탕이 웜 브라운이 아니라 푸른기 도는 먹색
+     · 강조가 붉은색 하나에서 호박빛 하나로. 붉은색은 지연·P1 경고에만 남긴다
+       (강조와 경고가 같은 색이면 둘 다 안 보인다)
+     · 모서리를 키우고 컬럼을 카드보다 어둡게 깔아 깊이를 준다 */
+:root[data-skin="nocturne"]{
+  --bg:#15171b; --surface:#1e2126; --surface-2:#191c20; --surface-3:#262a31;
+  --text:#e7eaed; --text-2:#b6bdc5; --muted:#98a0a9; --faint:#6d757e;
+  --border:#2b2f36; --border-strong:#3a3f47;
+  --accent:#c9873c; --accent-soft:#2a2219; --accent-text:#17191d;
+  /* P2 는 강조와 같은 계열이지만 같은 값이면 안 된다. 기본 팔레트가 accent(#c8453c)와
+     p1(#d1453b)을 사실상 같은 색으로 써서 둘 다 안 보이던 문제를 여기서 반복하지 않는다.
+     명도와 채도를 벌려 "강조는 깊은 호박, 경고는 밝은 금" 으로 갈라 놓는다. */
+  --p1:#d0645c; --p2:#dcb45e; --p3:#6a9fd4; --p4:#7e858c;
+  --ok:#4d9e7a;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.34);
+  --shadow-md:0 4px 16px rgba(0,0,0,.44);
+  --shadow-lg:0 20px 48px rgba(0,0,0,.6);
+  --r-sm:8px; --r:13px; --r-lg:18px;
+  color-scheme:dark;
+}
+/* 로고 그라디언트는 붉은 계열이 박혀 있어 스킨에서 따로 맞춘다 */
+:root[data-skin="nocturne"] .logo{background:linear-gradient(145deg,#c9873c,#8a5a22)}
+:root[data-skin="nocturne"] ::selection{background:var(--accent);color:var(--accent-text)}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+  font-size:15px; line-height:1.5; letter-spacing:-.011em;
+  color:var(--text); background:var(--bg);
+  -webkit-font-smoothing:antialiased; -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;
+}
+button,input,textarea,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+button{cursor:pointer}
+::selection{background:var(--accent);color:#fff}
+.hide{display:none!important}
+
+/* ─────────────────────────  shell  ───────────────────────── */
+#app{display:flex;height:100dvh;overflow:hidden}
+
+#sidebar{
+  width:var(--sidebar-w);flex:0 0 var(--sidebar-w);
+  background:var(--surface-2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  transition:transform .34s var(--ease);z-index:40;
+}
+.sb-head{display:flex;align-items:center;gap:9px;padding:16px 16px 12px}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(145deg,var(--accent),#8f2a24);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:0;flex:0 0 auto;
+  box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.brand{font-weight:640;font-size:15.5px;letter-spacing:-.02em}
+.sb-head .spacer{flex:1}
+.icon-btn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--muted);
+  transition:background .13s,color .13s}
+.icon-btn:hover{background:var(--surface-3);color:var(--text)}
+.icon-btn svg{width:17px;height:17px}
+
+.sb-scroll{flex:1;overflow-y:auto;padding:0 8px 16px;-webkit-overflow-scrolling:touch}
+/* 연결 계정 표시 — 사이드바 맨 아래 고정 */
+.sb-acct{display:flex;align-items:center;gap:6px;padding:9px 12px;margin:0 8px 8px;
+  border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);min-width:0}
+.sb-acct .em{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-acct button{font-size:11px;color:var(--accent);padding:2px 5px;border-radius:5px;flex:none}
+.sb-acct button:hover{background:var(--accent-soft)}
+/* 목록 행 — 더보기 버튼을 행 위에 얹는다 */
+.list-row{position:relative}
+.list-row .row-more{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:22px;height:22px;border-radius:5px;display:none;place-items:center;color:var(--faint)}
+.list-row .row-more svg{width:15px;height:15px}
+.list-row:hover .row-more{display:grid}
+.list-row .row-more:hover{background:var(--surface-3);color:var(--text)}
+/* 손가락 입력에는 hover 가 없으므로 항상 보인다 */
+@media (hover:none){.list-row .row-more{display:grid}}
+.list-row:hover .nav .ct{opacity:0}
+.menu button.danger{color:var(--p1)}
+.menu button.danger:hover{background:var(--accent-soft)}
+.sb-group{margin-top:14px}
+.sb-label{display:flex;align-items:center;gap:6px;padding:5px 8px;font-size:11.5px;font-weight:640;
+  letter-spacing:.045em;text-transform:uppercase;color:var(--faint);user-select:none}
+.sb-label .spacer{flex:1}
+.sb-label button{color:var(--faint);width:20px;height:20px;border-radius:5px;display:grid;place-items:center}
+.sb-label button:hover{background:var(--surface-3);color:var(--text)}
+.nav{
+  display:flex;align-items:center;gap:10px;width:100%;padding:7px 9px;border-radius:var(--r-sm);
+  font-size:14.5px;color:var(--text-2);text-align:left;transition:background .12s;position:relative;
+}
+.nav:hover{background:var(--surface-3)}
+.nav.active{background:var(--accent-soft);color:var(--accent);font-weight:560}
+.nav .ico{width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;color:var(--muted)}
+.nav.active .ico{color:var(--accent)}
+.nav .ico svg{width:17px;height:17px}
+.nav .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav .ct{font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.nav.active .ct{color:var(--accent)}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 9px;margin-left:4px}
+
+#scrim{position:fixed;inset:0;background:rgba(20,18,17,.42);backdrop-filter:blur(2px);z-index:35;
+  opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+#scrim.on{opacity:1;pointer-events:auto}
+
+/* ─────────────────────────  main  ───────────────────────── */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+#topbar{
+  display:flex;align-items:center;gap:10px;padding:10px 22px;height:56px;flex:0 0 auto;
+  padding-top:calc(10px + env(safe-area-inset-top));height:calc(56px + env(safe-area-inset-top));
+  border-bottom:1px solid transparent;transition:border-color .2s,background .2s;
+  background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:saturate(180%) blur(14px);
+  position:sticky;top:0;z-index:20;
+}
+#topbar.scrolled{border-bottom-color:var(--border)}
+#menuBtn{display:none}
+.tb-title{font-size:16px;font-weight:640;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  opacity:0;transform:translateY(5px);transition:opacity .22s var(--ease),transform .22s var(--ease)}
+#topbar.scrolled .tb-title{opacity:1;transform:none}
+.tb-sub{font-size:12.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+#topbar .spacer{flex:1}
+#syncDot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:0 0 7px;transition:background .2s}
+#syncDot.busy{background:var(--p2);animation:pulse 1.1s infinite}
+#syncDot.err{background:var(--p1)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+#scroller{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.wrap{max-width:740px;margin:0 auto;padding:6px 22px calc(160px + env(safe-area-inset-bottom))}
+
+/* 지속되는 경고. 토스트와 달리 조건이 풀려야 사라진다. */
+.banner{margin:14px 0 2px;padding:11px 13px;border-radius:9px;font-size:13px;line-height:1.55;
+  color:var(--p2);background:color-mix(in srgb,var(--p2) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--p2) 34%,transparent)}
+.banner b{font-weight:640}
+
+.hero{padding:14px 4px 10px}
+.hero h1{font-size:26px;font-weight:700;letter-spacing:-.032em;line-height:1.2}
+.hero p{font-size:13.5px;color:var(--muted);margin-top:3px}
+
+/* section headers (grouping) */
+.sec{margin-top:22px}
+.sec:first-of-type{margin-top:8px}
+.sec-h{display:flex;align-items:baseline;gap:8px;padding:5px 4px 6px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--bg);z-index:5}
+.sec-h .t{font-size:13.5px;font-weight:640;letter-spacing:-.01em}
+.sec-h .t.overdue{color:var(--p1)}
+.sec-h .c{font-size:12px;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ─────────────────────────  task row  ───────────────────────── */
+.task{
+  display:flex;gap:11px;padding:11px 4px 11px 4px;border-bottom:1px solid var(--border);
+  position:relative;align-items:flex-start;
+  animation:rowIn .26s var(--ease) both;
+}
+@keyframes rowIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.task.done .t-title{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--faint)}
+.task.leaving{animation:rowOut .3s var(--ease) forwards}
+@keyframes rowOut{to{opacity:0;transform:translateX(10px);max-height:0;padding-top:0;padding-bottom:0;border-color:transparent}}
+.task.sub{padding-left:30px}
+.task.sub::before{content:"";position:absolute;left:13px;top:0;bottom:0;width:1px;background:var(--border)}
+
+.check{
+  width:19px;height:19px;flex:0 0 19px;margin-top:2px;border-radius:50%;
+  border:1.6px solid var(--p4);position:relative;transition:background .16s,border-color .16s,transform .12s;
+  display:grid;place-items:center;
+}
+.check:active{transform:scale(.88)}
+.check svg{width:11px;height:11px;opacity:0;transform:scale(.5);transition:opacity .14s,transform .18s var(--ease);
+  stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.check:hover svg{opacity:.42;transform:scale(1)}
+.check.p1{border-color:var(--p1);background:color-mix(in srgb,var(--p1) 11%,transparent);color:var(--p1)}
+.check.p2{border-color:var(--p2);background:color-mix(in srgb,var(--p2) 11%,transparent);color:var(--p2)}
+.check.p3{border-color:var(--p3);background:color-mix(in srgb,var(--p3) 11%,transparent);color:var(--p3)}
+.check.p4{color:var(--muted)}
+.task.done .check{background:var(--p4);border-color:var(--p4);color:#fff}
+.task.done .check svg{opacity:1;transform:scale(1)}
+
+.t-body{flex:1;min-width:0;cursor:pointer}
+.t-title{font-size:14.7px;line-height:1.42;word-break:break-word;transition:color .18s}
+.t-notes{font-size:12.8px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:pre-wrap}
+.t-meta{display:flex;flex-wrap:wrap;align-items:center;gap:5px 9px;margin-top:5px;font-size:12.2px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;line-height:1;white-space:nowrap}
+.chip svg{width:12px;height:12px;flex:0 0 12px}
+.chip.due-today{color:var(--ok);font-weight:560}
+.chip.due-over{color:var(--p1);font-weight:560}
+.chip.due-soon{color:var(--p2)}
+.lbl{display:inline-flex;align-items:center;gap:3px;padding:1.5px 6px 2px;border-radius:5px;
+  background:var(--surface-3);color:var(--text-2);font-size:11.5px;line-height:1.35}
+.t-act{display:flex;gap:1px;opacity:0;transition:opacity .14s;flex:0 0 auto;margin-top:-1px}
+.task:hover .t-act{opacity:1}
+.t-act button{width:27px;height:27px;border-radius:7px;display:grid;place-items:center;color:var(--faint)}
+.t-act button:hover{background:var(--surface-3);color:var(--text)}
+.t-act svg{width:15px;height:15px}
+@media (hover:none){.t-act{opacity:1}}
+
+.empty{text-align:center;padding:64px 20px;color:var(--faint)}
+.empty svg{width:52px;height:52px;opacity:.32;margin-bottom:14px}
+.empty p{font-size:14px}
+.empty .sm{font-size:12.5px;margin-top:5px;opacity:.8}
+
+/* ─────────────────────────  quick add  ───────────────────────── */
+#addBar{
+  position:fixed;left:var(--sidebar-w);right:0;bottom:0;padding:14px 22px calc(16px + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--bg) 58%,transparent);z-index:25;pointer-events:none;
+}
+#addBar .inner{max-width:740px;margin:0 auto;pointer-events:auto}
+#addTrigger{
+  display:flex;align-items:center;gap:9px;width:100%;padding:12px 15px;border-radius:var(--r);
+  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-md);
+  color:var(--muted);font-size:14.5px;transition:border-color .15s,box-shadow .15s,transform .12s;
+}
+#addTrigger:hover{border-color:var(--border-strong);box-shadow:var(--shadow-lg)}
+#addTrigger:active{transform:scale(.994)}
+#addTrigger .plus{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;flex:0 0 20px}
+#addTrigger .plus svg{width:12px;height:12px}
+#addTrigger kbd{margin-left:auto;font-family:inherit;font-size:11.5px;padding:2px 6px;border-radius:5px;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--faint)}
+
+/* composer modal */
+#composer{position:fixed;inset:0;z-index:60;display:none;align-items:flex-start;justify-content:center;
+  padding:12vh 16px 16px;background:rgba(20,18,17,.34);backdrop-filter:blur(3px)}
+#composer.on{display:flex;animation:fadeIn .18s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.cmp{width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden;animation:cmpIn .3s var(--ease) both}
+@keyframes cmpIn{from{opacity:0;transform:translateY(-10px) scale(.985)}to{opacity:1;transform:none}}
+#cmpInput{width:100%;padding:17px 18px 4px;font-size:16.5px;font-weight:520;letter-spacing:-.015em;
+  resize:none;min-height:52px;max-height:180px;line-height:1.4}
+#cmpInput::placeholder{color:var(--faint);font-weight:400}
+#cmpNotes{width:100%;padding:0 18px 12px;font-size:13.5px;color:var(--text-2);resize:none;
+  min-height:22px;max-height:150px;line-height:1.5}
+#cmpNotes::placeholder{color:var(--faint)}
+.cmp-parse{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 12px;min-height:0}
+.ptag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 3.5px;border-radius:6px;font-size:12px;
+  background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);
+  animation:rowIn .2s var(--ease) both}
+.ptag svg{width:12px;height:12px}
+.ptag.a{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.cmp-foot{display:flex;align-items:center;gap:8px;padding:10px 12px 10px 16px;border-top:1px solid var(--border);
+  background:var(--surface-2)}
+.cmp-foot .spacer{flex:1}
+.selw{position:relative}
+.sel{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;font-size:13px;
+  color:var(--text-2);border:1px solid transparent;transition:background .12s}
+.sel:hover{background:var(--surface-3)}
+.sel svg{width:14px;height:14px;color:var(--muted)}
+.btn{padding:7px 15px;border-radius:8px;font-size:13.5px;font-weight:560;transition:opacity .12s,transform .1s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);color:var(--accent-text)}
+.btn.primary:disabled{opacity:.4;cursor:default}
+.btn.ghost{color:var(--text-2)}
+.btn.ghost:hover{background:var(--surface-3)}
+.hint{padding:9px 18px 12px;font-size:11.8px;color:var(--faint);line-height:1.6;border-top:1px solid var(--border)}
+.hint code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+
+/* dropdown menu */
+.menu{position:absolute;bottom:calc(100% + 6px);left:0;min-width:210px;max-height:290px;overflow-y:auto;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);
+  padding:5px;z-index:70;animation:cmpIn .16s var(--ease) both}
+.menu.up{bottom:auto;top:calc(100% + 6px)}
+.menu.right{left:auto;right:0}
+.menu button{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border-radius:7px;
+  font-size:13.5px;text-align:left;color:var(--text-2)}
+.menu button:hover{background:var(--surface-2)}
+/* I.check 는 stroke·크기 속성이 없는 패스라, 여기서 지정하지 않으면 검게 채워진 채
+   버튼 전체를 밀어낸다. 메뉴 안의 모든 아이콘을 한 번에 잡는다. */
+.menu button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.menu button .gap{width:16px;flex:none}
+.menu button.on{color:var(--accent);font-weight:560}
+.menu .sepline{height:1px;background:var(--border);margin:5px 3px}
+.menu .caption{padding:6px 9px 3px;font-size:11px;letter-spacing:.04em;color:var(--faint);text-transform:uppercase}
+/* 메뉴는 position:absolute 라 기준이 될 relative 부모가 필요하다 */
+.menu-wrap{position:relative;display:inline-flex}
+/* 정렬이 등록일순이 아니면 버튼에 점을 찍어, 메뉴를 열지 않아도 상태가 보이게 한다 */
+#sortBtn.tuned{color:var(--accent)}
+#sortBtn.tuned::after{content:'';position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:50%;
+  background:var(--accent)}
+#sortBtn{position:relative}
+
+/* ─────────────────────────  detail drawer  ───────────────────────── */
+#detail{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;background:var(--surface);
+  border-left:1px solid var(--border);z-index:55;transform:translateX(100%);transition:transform .34s var(--ease);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+#detail.on{transform:none}
+.dt-head{display:flex;align-items:center;gap:8px;padding:12px 12px 12px 18px;border-bottom:1px solid var(--border);
+  padding-top:calc(12px + env(safe-area-inset-top))}
+.dt-head .nm{flex:1;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dt-body{flex:1;overflow-y:auto;padding:18px calc(18px + env(safe-area-inset-right)) 24px 18px}
+.dt-title{width:100%;font-size:18px;font-weight:620;letter-spacing:-.022em;line-height:1.35;resize:none;min-height:30px}
+.dt-notes{width:100%;margin-top:12px;font-size:14px;line-height:1.6;color:var(--text-2);resize:none;min-height:90px}
+.dt-notes::placeholder{color:var(--faint)}
+.dt-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border);font-size:13.5px}
+.dt-row .k{width:74px;flex:0 0 74px;color:var(--muted);font-size:12.5px}
+.dt-row .v{flex:1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:7px;background:var(--surface-2);
+  border:1px solid var(--border);font-size:12.5px;color:var(--text-2);transition:background .12s}
+button.pill:hover{background:var(--surface-3)}
+.pill svg{width:13px;height:13px}
+.pill.x{padding-right:5px}
+.pill.x b{font-weight:400;opacity:.55;font-size:14px;line-height:1;padding:0 2px}
+.danger{color:var(--p1)}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+  background:var(--text);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13.5px;
+  box-shadow:var(--shadow-lg);z-index:90;opacity:0;pointer-events:none;transition:opacity .22s,transform .28s var(--ease);
+  display:flex;align-items:center;gap:12px;max-width:calc(100vw - 32px)}
+#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:var(--bg);font-weight:620;font-size:13.5px;opacity:.85}
+
+/* auth screen */
+#auth{position:fixed;inset:0;z-index:80;display:none;place-items:center;background:var(--bg);padding:24px}
+#auth.on{display:grid}
+.auth-card{width:100%;max-width:420px;text-align:center}
+.auth-card .logo{width:52px;height:52px;border-radius:15px;font-size:22px;margin:0 auto 18px}
+.auth-card h2{font-size:22px;font-weight:700;letter-spacing:-.028em}
+.auth-card p{font-size:14px;color:var(--muted);margin-top:8px;line-height:1.6}
+.auth-card .btn{margin-top:22px;padding:11px 22px;font-size:14.5px}
+.field{margin-top:20px;text-align:left}
+.field label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;letter-spacing:.01em}
+.field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);
+  font-size:13.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+.err{color:var(--p1);font-size:12.5px;margin-top:10px}
+
+
+/* ─────────────────────────  board  ───────────────────────── */
+.wrap.board-wrap{max-width:none;padding-left:14px;padding-right:14px;padding-bottom:24px}
+.board{display:flex;gap:14px;align-items:flex-start;overflow-x:auto;padding:4px 2px 18px;
+  scroll-snap-type:x proximity;scrollbar-width:thin}
+.col{flex:0 0 var(--col-w);width:var(--col-w);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-lg);display:flex;flex-direction:column;scroll-snap-align:start;
+  max-height:var(--col-h);min-height:150px;transition:outline-color .12s}
+.col-h{display:flex;align-items:center;gap:8px;padding:12px 14px 9px;font-size:13.5px;font-weight:640;
+  letter-spacing:-.012em}
+.col-h .sw{width:9px;height:9px;border-radius:3px;flex:0 0 9px}
+.col-h .c{margin-left:auto;font-size:12px;font-weight:500;color:var(--faint);font-variant-numeric:tabular-nums}
+.col-body{flex:1;overflow-y:auto;padding:0 10px 8px;display:flex;flex-direction:column;gap:8px;min-height:52px}
+.col-add{margin:0 10px 10px;padding:8px 10px;border-radius:9px;font-size:13px;color:var(--muted);
+  display:flex;gap:7px;align-items:center;transition:background .12s}
+.col-add:hover{background:var(--surface-3);color:var(--text)}
+.col-add svg{width:14px;height:14px}
+.col.drop-on{outline:2px solid var(--accent);outline-offset:-1px;background:var(--accent-soft)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:9px 11px 10px 14px;box-shadow:var(--shadow-sm);position:relative;
+  animation:rowIn .22s var(--ease) both;touch-action:pan-y}
+.card::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--p4)}
+.card.p1::before{background:var(--p1)}
+.card.p2::before{background:var(--p2)}
+.card.p3::before{background:var(--p3)}
+.card-top{display:flex;gap:9px;align-items:flex-start}
+.card-top .check{margin-top:1px}
+.card-t{flex:1;font-size:14px;line-height:1.42;word-break:break-word;cursor:pointer}
+.card-m{display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:7px;padding-left:28px;font-size:11.8px;color:var(--muted)}
+.card.done .card-t{text-decoration:line-through;color:var(--faint)}
+
+/* 카드 안 서브태스크 체크리스트 */
+.sub-head{display:flex;align-items:center;gap:8px;width:100%;margin-top:9px;padding:5px 2px 4px 28px;
+  border-radius:7px;transition:background .12s}
+.sub-head:hover{background:var(--surface-2)}
+.sub-head .cv{width:13px;height:13px;flex:0 0 13px;display:grid;place-items:center;color:var(--faint);
+  transition:transform .18s var(--ease)}
+.sub-head .cv svg{width:13px;height:13px}
+.sub-head.folded .cv{transform:rotate(-90deg)}
+.sub-head .bar{flex:1;height:4px;border-radius:3px;background:var(--surface-3);overflow:hidden;min-width:24px}
+.sub-head .bar i{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .25s var(--ease)}
+.sub-head .ct{font-size:11.2px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.card-subs{display:flex;flex-direction:column;gap:1px;margin-top:3px;padding-left:22px}
+.sub-row{display:flex;align-items:flex-start;gap:7px;padding:4px 4px 4px 6px;border-radius:7px;
+  border-left:2px solid var(--border);transition:background .12s;touch-action:pan-y}
+.sub-row:hover{background:var(--surface-2)}
+.sub-row .check.sm{width:14px;height:14px;flex:0 0 14px;margin-top:2px;border-width:1.4px}
+.sub-row .check.sm svg{width:8px;height:8px;stroke-width:3.2}
+.sub-t{flex:1;min-width:0;font-size:12.8px;line-height:1.4;word-break:break-word;cursor:pointer}
+.sub-row.done .sub-t{text-decoration:line-through;color:var(--faint)}
+.sub-row.done .check{background:var(--p4);border-color:var(--p4);color:#fff}
+.sub-row.done .check svg{opacity:1;transform:scale(1)}
+.sub-m{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;flex:0 0 auto;max-width:46%;margin-top:1.5px;
+  font-size:11px;color:var(--muted);align-items:center}
+.sub-row.dragging{opacity:.3}
+@media (hover:hover){.wrap.dnd-on .sub-row{cursor:grab}}
+@media (hover:hover){.card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-md)}}
+
+/* ─────────────────────────  drag & drop  ───────────────────────── */
+.wrap.dnd-on .task,.wrap.dnd-on .card{touch-action:pan-y}
+@media (hover:hover){.wrap.dnd-on .task .grip,.wrap.dnd-on .card{cursor:grab}}
+.grip{width:22px;height:26px;display:none;place-items:center;color:var(--faint);opacity:.7}
+.wrap.dnd-on .task .grip{display:grid}
+.grip svg{width:15px;height:15px}
+.task.dragging,.card.dragging{opacity:.3}
+/* 커서를 따라다니는 실물 블록.
+   ⚠ .card / .task 는 등장 애니메이션(rowIn)에 animation-fill-mode:both 가 걸려 있다.
+   CSS 애니메이션은 인라인 스타일보다 우선하므로, 애니메이션을 끄지 않으면 매 프레임
+   넣는 transform 이 rowIn 의 `to{transform:none}` 에 덮여 고스트가 좌상단에 박힌다. */
+#dragGhost,#dragGhost *{animation:none!important}
+#dragGhost{position:fixed;left:0;top:0;z-index:200;pointer-events:none;
+  transform-origin:top left;will-change:transform;
+  background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--r);
+  box-shadow:var(--shadow-lg);padding:10px 12px;opacity:.97;max-width:86vw;overflow:hidden}
+#dragGhost .t-act,#dragGhost .grip{display:none!important}
+#dragGhost .card-subs{display:none}          /* 끌 때는 카드를 간결하게 */
+#dropLine{position:fixed;z-index:199;height:2px;background:var(--accent);border-radius:2px;
+  pointer-events:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+#dropLine::before{content:"";position:absolute;left:-3px;top:-3px;width:8px;height:8px;
+  border-radius:50%;background:var(--accent)}
+.card.nest-on{outline:2px solid var(--accent);outline-offset:1px;background:var(--accent-soft)}
+.card.nest-on::after{content:"서브태스크로";position:absolute;right:7px;top:50%;transform:translateY(-50%);
+  font-size:10.5px;font-weight:700;letter-spacing:-.01em;color:var(--accent);background:var(--surface);
+  padding:2px 7px 3px;border-radius:6px;border:1px solid var(--accent);white-space:nowrap;
+  box-shadow:var(--shadow-sm)}
+select.pill{appearance:none;-webkit-appearance:none;padding-right:22px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+  background-position:calc(100% - 12px) 52%,calc(100% - 8px) 52%;background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+body.dragging-active{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+@media (prefers-reduced-motion:reduce){
+  .task,.card,.ptag{animation:none!important}
+  #dragGhost{transition:none!important}
+}
+
+
+/* ─────────────────────────  AI 챗 패널  ───────────────────────── */
+.nav.ai-nav kbd{font-family:inherit;font-size:10.5px;padding:1px 5px;border-radius:4px;
+  background:var(--surface-3);border:1px solid var(--border);color:var(--faint)}
+.nav.ai-nav .ico{color:var(--accent)}
+
+#chat{position:fixed;top:0;right:0;bottom:0;width:432px;max-width:100vw;background:var(--surface);
+  border-left:1px solid var(--border);z-index:58;transform:translateX(100%);
+  transition:transform .34s var(--ease);display:flex;flex-direction:column;box-shadow:var(--shadow-lg)}
+#chat.on{transform:none}
+.chat-head{display:flex;align-items:center;gap:8px;padding:12px 12px 12px 16px;border-bottom:1px solid var(--border);
+  padding-top:calc(12px + env(safe-area-inset-top))}
+.chat-head .nm{flex:1;font-size:14.5px;font-weight:640;letter-spacing:-.015em}
+.ci-sm{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(145deg,var(--accent),#8f2a24)}
+.ci-sm svg{width:15px;height:15px}
+
+.chat-body{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:10px;
+  -webkit-overflow-scrolling:touch}
+.chat-empty{margin:auto;text-align:center;padding:20px 8px;color:var(--muted)}
+.chat-empty .ci{width:44px;height:44px;margin:0 auto 14px;border-radius:13px;display:grid;place-items:center;
+  color:#fff;background:linear-gradient(145deg,var(--accent),#8f2a24);box-shadow:var(--shadow-md)}
+.chat-empty .ci svg{width:24px;height:24px}
+.chat-empty p{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.chat-empty .sm{font-size:12.5px;margin-top:8px;line-height:1.65;color:var(--faint)}
+.chat-empty .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:18px}
+.chip-btn{padding:6px 12px;border-radius:16px;font-size:12.5px;color:var(--text-2);
+  background:var(--surface-2);border:1px solid var(--border);transition:background .12s,border-color .12s}
+.chip-btn:hover{background:var(--surface-3);border-color:var(--border-strong)}
+
+.msg{display:flex;animation:rowIn .22s var(--ease) both}
+.msg.user{justify-content:flex-end}
+.msg .bub{max-width:86%;padding:9px 13px 10px;border-radius:14px;font-size:14px;line-height:1.55;
+  word-break:break-word}
+.msg.user .bub{background:var(--accent);color:var(--accent-text);border-bottom-right-radius:5px}
+.msg.ai .bub{background:var(--surface-2);border:1px solid var(--border);border-bottom-left-radius:5px}
+.msg.tool,.msg.err{align-items:center;gap:7px;font-size:12.3px;color:var(--muted);padding:2px 2px 2px 4px}
+.msg.tool svg,.msg.err svg{width:13px;height:13px;flex:0 0 13px;color:var(--ok)}
+.msg.tool.bad svg,.msg.err svg{color:var(--p1)}
+.msg.err{color:var(--p1)}
+.msg.tool em{font-style:normal;opacity:.8}
+.bub.typing{display:flex;gap:4px;padding:13px}
+.bub.typing i{width:6px;height:6px;border-radius:50%;background:var(--faint);animation:blink 1.2s infinite}
+.bub.typing i:nth-child(2){animation-delay:.18s}
+.bub.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+.chat-foot{display:flex;gap:8px;align-items:flex-end;padding:12px 14px;border-top:1px solid var(--border);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));background:var(--surface)}
+#chatInput{flex:1;min-height:38px;max-height:140px;padding:9px 13px;border:1px solid var(--border);
+  border-radius:12px;background:var(--surface-2);font-size:14px;line-height:1.5;resize:none;
+  transition:border-color .14s}
+#chatInput:focus{border-color:var(--border-strong)}
+.send{width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:var(--accent);color:#fff;
+  display:grid;place-items:center;transition:opacity .14s,transform .1s}
+.send:disabled{opacity:.35;cursor:default}
+.send:not(:disabled):active{transform:scale(.93)}
+.send svg{width:17px;height:17px;margin-left:-1px}
+
+#chatSettings{position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 96%,transparent);
+  backdrop-filter:blur(3px);padding:22px;display:none;flex-direction:column;gap:2px;overflow-y:auto;z-index:5}
+#chatSettings.on{display:flex}
+#chatSettings .note{font-size:11.8px;color:var(--muted);line-height:1.65;margin-top:14px;
+  padding:10px 12px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border)}
+#chatSettings .row{display:flex;align-items:center;gap:8px;margin-top:18px}
+#chatSettings .row .spacer{flex:1}
+#chatSettings .err{margin-top:12px;font-size:12.5px}
+
+@media (max-width:860px){#chat{width:100%;border-left:none}}
+
+/* ─────────────────────────  responsive  ───────────────────────── */
+@media (max-width:860px){
+  #sidebar{position:fixed;top:0;bottom:0;left:0;transform:translateX(-100%);box-shadow:var(--shadow-lg)}
+  #sidebar.on{transform:none}
+  #menuBtn{display:grid}
+  #addBar{left:0}
+  .wrap{padding-left:16px;padding-right:16px}
+  #topbar{padding-left:14px;padding-right:14px}
+  #detail{width:100%;border-left:none}
+  .hero h1{font-size:23px}
+  .t-act{display:none}
+  /* 폰에서는 폭이 이미 화면을 거의 채우므로 세로만 늘린다 —
+     82vw × 1.3 = 106vw 는 화면을 넘어간다 */
+  .col{flex-basis:86vw;width:86vw;max-height:calc(100dvh - 180px)}
+  .wrap.board-wrap{padding-left:12px;padding-right:12px}
+}
+@media (min-width:861px){#scrim{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div class="sb-head">
+      <div class="logo">T</div>
+      <div class="brand">Saydo</div>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="skinBtn" title="모양"></button>
+      <button class="icon-btn" id="themeBtn" title="테마"></button>
+      <button class="icon-btn" id="syncBtn" title="새로고침"></button>
+    </div>
+    <div class="sb-scroll" id="sbScroll"></div>
+    <!-- 어느 구글 계정에 연결됐는지 항상 보이게 한다. 계정을 여러 개 쓰는 사람은
+         "동기화가 안 된다" 고 느끼지만 실제로는 다른 계정을 보고 있는 경우가 대부분이다. -->
+    <div class="sb-acct hide" id="sbAcct">
+      <span class="em" id="sbAcctEmail"></span>
+      <button id="sbAcctSwitch" title="다른 구글 계정으로 연결">전환</button>
+    </div>
+  </aside>
+  <div id="scrim"></div>
+
+  <main id="main">
+    <header id="topbar">
+      <button class="icon-btn" id="menuBtn"></button>
+      <div style="min-width:0">
+        <div class="tb-title" id="tbTitle">오늘</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="tb-sub" id="tbSub"></div>
+      <div id="syncDot"></div>
+      <button class="icon-btn hide" id="boardBy" title="컬럼 기준 전환"></button>
+      <span class="menu-wrap"><button class="icon-btn" id="sortBtn" title="정렬·보기 옵션"></button></span>
+    </header>
+    <div id="scroller"><div class="wrap" id="wrap"></div></div>
+  </main>
+</div>
+
+<div id="addBar"><div class="inner">
+  <button id="addTrigger">
+    <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    <span>작업 추가</span>
+    <kbd>Q</kbd>
+  </button>
+</div></div>
+
+<div id="composer"><div class="cmp">
+  <textarea id="cmpInput" rows="1" placeholder="예: 내일 오후 3시 배포 파이프라인 점검 p1 @검증 매주 월"></textarea>
+  <textarea id="cmpNotes" rows="1" placeholder="설명 추가"></textarea>
+  <div class="cmp-parse" id="cmpParse"></div>
+  <div class="cmp-foot">
+    <div class="selw"><button class="sel" id="listSel"></button></div>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="cmpCancel">취소</button>
+    <button class="btn primary" id="cmpSave" disabled>추가</button>
+  </div>
+  <div class="hint" id="cmpHint"></div>
+</div></div>
+
+<aside id="detail">
+  <div class="dt-head">
+    <button class="icon-btn" id="dtClose"></button>
+    <div class="nm" id="dtList"></div>
+    <button class="icon-btn danger" id="dtDelete" title="삭제"></button>
+  </div>
+  <div class="dt-body" id="dtBody"></div>
+</aside>
+
+<aside id="chat">
+  <div class="chat-head">
+    <span class="ci-sm" id="chatIcon"></span>
+    <div class="nm">AI 어시스턴트</div>
+    <button class="icon-btn" id="chatClear" title="대화 지우기"></button>
+    <button class="icon-btn" id="chatCog" title="설정"></button>
+    <button class="icon-btn" id="chatClose" title="닫기"></button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-foot">
+    <textarea id="chatInput" rows="1" placeholder="할 일을 말하거나 물어보세요"></textarea>
+    <button id="chatSend" class="send" disabled></button>
+  </div>
+  <div id="chatSettings"></div>
+</aside>
+
+<div id="toast"><span id="toastMsg"></span><button id="toastAct" class="hide"></button></div>
+
+<div id="auth"><div class="auth-card">
+  <div class="logo">T</div>
+  <h2>Saydo</h2>
+  <p>Google Tasks를 데이터 저장소로 사용하는<br>개인용 태스크 매니저입니다.</p>
+  <div class="field hide" id="cidField">
+    <label>Google OAuth 클라이언트 ID</label>
+    <input id="cidInput" placeholder="xxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="err hide" id="authErr"></div>
+  <button class="btn primary" id="authBtn">Google 계정 연결</button>
+  <button id="cidToggle" style="display:block;margin:12px auto 0;background:none;border:0;padding:4px;
+    font:inherit;font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline">클라이언트 ID 변경</button>
+  <p style="font-size:12px;margin-top:12px;opacity:.7">데이터는 Google 계정에만 저장되며<br>외부 서버로 전송되지 않습니다.</p>
+</div></div>
+
+<script src="./core.js"></script>
+<script src="./app.js"></script>
+<script src="./dnd.js"></script>
+<script src="./ai.js"></script>
+</body>
+</html>
