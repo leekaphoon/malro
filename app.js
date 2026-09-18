@@ -149,10 +149,10 @@ const tokenStore = {
  *
  *   우선순위: ?cid= 쿼리 > 이 기기에 저장된 값 > 아래 기본값
  *   다른 클라이언트로 바꾸려면 설정에서 입력하면 저장값이 우선한다. */
-/* Saydo 전용 — **개인 Google 계정**의 Cloud 프로젝트(345139066407)에서 발급한 값이다.
-   Tasq(개인용)의 것(프로젝트 933877346643)은 회사 Workspace 계정에 묶여 있어 가져오지
-   않는다. 공개 배포판이 거기에 의존하면 소유권이 흐려진다 — `uitest.js` 가 그 값이 다시
-   섞여 들어오지 않는지 감시한다. */
+/* 이 값은 비밀이 아니다 — 브라우저 OAuth 의 클라이언트 ID 는 설계상 공개이고, 오용은
+   허용된 JavaScript 원본으로 막는다. 포크해서 쓰시려면 자기 것으로 바꾸면 된다
+   (설정 화면 또는 `?cid=` 쿼리). `uitest.js` 가 이 값이 바뀌지 않았는지 감시한다 —
+   다른 프로젝트의 클라이언트가 복사·붙여넣기로 섞여 들어오는 사고를 막기 위해서다. */
 const DEFAULT_CLIENT_ID = '345139066407-ogtlu760k9o4dfb3iuiqpcl27e5rfi9p.apps.googleusercontent.com';
 
 function initialClientId() {

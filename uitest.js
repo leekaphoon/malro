@@ -218,14 +218,13 @@ const TASKS = {
   assert('변경 링크를 누르면 입력란이 열린다',
     await cA.evaluate(() => !document.getElementById('cidField').classList.contains('hide')));
 
-  /* 소유권 경계 감시 — Tasq 의 클라이언트는 **회사 Workspace 계정**에 묶인 프로젝트
-     933877346643 의 것이다. 공개판이 거기에 의존하면 소유권이 흐려지므로, 복사·붙여넣기로
-     다시 섞여 들어오는 순간 이 단언이 깨진다. */
+  /* 클라이언트 ID 고정 — "어느 프로젝트의 것이 아니어야 한다" 는 금지 목록보다,
+     "정확히 이것이어야 한다" 가 낫다. 목록에 없는 값이 섞여 들어와도 잡히고,
+     금지할 값을 공개 저장소에 적어 둘 필요도 없다. */
   const appSrc = require('fs').readFileSync(__dirname + '/app.js', 'utf8');
-  assert('회사 계정에 묶인 Tasq 의 클라이언트 ID 가 섞여 있지 않다',
-    !/933877346643-/.test(appSrc));
-  assert('Saydo 는 개인 계정 프로젝트(345139066407)의 클라이언트를 쓴다',
-    /345139066407-/.test(appSrc));
+  const EXPECT = '345139066407-ogtlu760k9o4dfb3iuiqpcl27e5rfi9p.apps.googleusercontent.com';
+  const found = (appSrc.match(/const DEFAULT_CLIENT_ID = '([^']+)'/) || [])[1];
+  assert('DEFAULT_CLIENT_ID 가 의도한 값 그대로다', found === EXPECT, String(found));
 
   const cB = await cidPage('', 'saved.apps.googleusercontent.com');
   assert('이 기기에 저장된 값이 기본값보다 우선',
