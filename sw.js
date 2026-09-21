@@ -1,5 +1,5 @@
-/* Saydo service worker — 앱 셸만 캐시한다. API 응답은 절대 캐시하지 않는다. */
-const CACHE = 'saydo-v2';
+/* Malro service worker — 앱 셸만 캐시한다. API 응답은 절대 캐시하지 않는다. */
+const CACHE = 'malro-v1';
 /* './index.html' 은 넣지 않는다 — Cloudflare Pages 가 그 주소를 './' 로 301 하기 때문에
    받아 두면 리디렉션 이력이 붙은 응답이 캐시에 들어간다. 아래 unredirect() 설명 참고. */
 const SHELL = ['./', './core.js', './app.js', './dnd.js', './ai.js', './manifest.webmanifest',

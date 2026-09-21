@@ -53,7 +53,7 @@ const mkTasks = () => ({
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     await page.route('https://tasks.googleapis.com/**', route => {
       const u = new URL(route.request().url()), method = route.request().method();

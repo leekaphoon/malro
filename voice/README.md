@@ -1,4 +1,4 @@
-# Saydo Voice — 시리로 할 일 확인·등록
+# Malro Voice — 시리로 할 일 확인·등록
 
 아이폰에서 **앱을 열지 않고** 말로 처리합니다. 잠금화면, 운전 중, 에어팟에서도 됩니다.
 
@@ -87,7 +87,7 @@ GIS 로 그 토큰을 갖고 있다). 그러면 격리가 토큰 단위로 성�
 
 ## 앱의 AI 어시스턴트도 여기로 (action=chat)
 
-시리뿐 아니라 **Saydo 앱의 AI 어시스턴트**도 이 백엔드를 씁니다. 그러면 맥 로컬 프록시가
+시리뿐 아니라 **Malro 앱의 AI 어시스턴트**도 이 백엔드를 씁니다. 그러면 맥 로컬 프록시가
 필요 없어지고, 아이폰·아이패드·다른 맥에서 그대로 동작합니다.
 
 **설정** — 앱 사이드바 AI 어시스턴트 → 톱니 → 프록시 주소에 **웹앱 URL**, 그 아래
@@ -124,7 +124,7 @@ POST 본문이 302 리디렉션에서 사라지는 환경이면 앱이 자동으
 
 ### 1. 스크립트 만들기
 
-<https://script.google.com> → **새 프로젝트** → 이름 `saydo-voice`
+<https://script.google.com> → **새 프로젝트** → 이름 `malro-voice`
 
 - 왼쪽 `Code.gs` 내용을 전부 지우고 이 폴더의 **`Code.gs`** 를 붙여넣습니다.
 - 왼쪽 톱니(**프로젝트 설정**) → **"appsscript.json" 매니페스트 파일 표시** 체크
@@ -136,7 +136,7 @@ POST 본문이 302 리디렉션에서 사라지는 환경이면 앱이 자동으
 
 | 속성 | 값 |
 |---|---|
-| `GEMINI_API_KEY` | AI Studio 에서 발급한 **유료 티어** 키 (`Gemini API Key-saydo-local` 과 별도로 하나 더 발급 권장) |
+| `GEMINI_API_KEY` | AI Studio 에서 발급한 **유료 티어** 키 (`Gemini API Key-malro-local` 과 별도로 하나 더 발급 권장) |
 | `SHARED_SECRET` | 비워 두고 아래에서 생성 |
 
 편집기에서 함수 `setupSecret` 선택 → **실행** → **실행 로그**에 나온 40자를 복사해 둡니다.
@@ -145,7 +145,7 @@ POST 본문이 302 리디렉션에서 사라지는 환경이면 앱이 자동으
 ### 3. 권한 승인 + 동작 확인
 
 함수 `checkSetup` 선택 → **실행** → 권한 요청이 뜹니다.
-"이 앱은 확인되지 않았습니다" 화면에서 **고급 → saydo-voice(안전하지 않음)으로 이동** —
+"이 앱은 확인되지 않았습니다" 화면에서 **고급 → malro-voice(안전하지 않음)으로 이동** —
 본인이 방금 만든 스크립트이므로 정상입니다.
 
 실행 로그에 목록 이름들과 오늘 요약이 찍히면 Tasks 연결이 된 것입니다.
@@ -165,7 +165,7 @@ POST 본문이 302 리디렉션에서 사라지는 환경이면 앱이 자동으
 
 ```bash
 curl -sL '<웹앱 URL>'
-# {"ok":true,"service":"saydo-voice","hasKey":true,"hasSecret":true}
+# {"ok":true,"service":"malro-voice","hasKey":true,"hasSecret":true}
 ```
 
 `hasKey` 나 `hasSecret` 이 `false` 면 2단계로 돌아가십시오.

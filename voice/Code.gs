@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Saydo Voice — 시리 단축어용 Apps Script 백엔드
+   Malro Voice — 시리 단축어용 Apps Script 백엔드
    --------------------------------------------------------------------------
    목표
      아이폰에서 앱을 열지 않고 말로 할 일을 확인하고 등록한다.
@@ -22,7 +22,7 @@
      4. 실패는 조용히 넘기지 않고 speak 로 이유를 돌려준다.
 
    데이터 호환
-     Saydo 앱과 같은 ⟦…⟧ 메타 인코딩을 쓴다. 어느 쪽에서 만들어도 서로 읽는다.
+     Malro 앱과 같은 ⟦…⟧ 메타 인코딩을 쓴다. 어느 쪽에서 만들어도 서로 읽는다.
    ========================================================================== */
 
 var TASKS = 'https://tasks.googleapis.com/tasks/v1';
@@ -80,7 +80,7 @@ function doGet(e) {
   var p = props();
   return out({
     ok: true,
-    service: 'saydo-voice',
+    service: 'malro-voice',
     hasKey: !!p.getProperty('GEMINI_API_KEY'),
     hasSecret: !!p.getProperty('SHARED_SECRET')
   });
@@ -438,7 +438,7 @@ function fetchTasks(listId) {
   return (r && r.items) || [];
 }
 
-/** 이름이 정확히 같은 것 우선, 없으면 부분 일치. Saydo 앱과 같은 규칙. */
+/** 이름이 정확히 같은 것 우선, 없으면 부분 일치. Malro 앱과 같은 규칙. */
 function matchList(lists, name) {
   if (!name) return null;
   var q = String(name).toLowerCase().replace(/\s/g, '');
@@ -702,7 +702,7 @@ function chatSystem(snap, voice) {
        '  실행 가능한 제안으로 끝낸다. 빈 응답이나 "완료했습니다" 같은 답은 금지한다.'];
 
   return [
-    '너는 Saydo 라는 개인 태스크 관리 앱의 어시스턴트다. 한국어로 답한다.',
+    '너는 Malro 라는 개인 태스크 관리 앱의 어시스턴트다. 한국어로 답한다.',
     '',
     '규칙:',
     '- 태스크를 만들거나 바꿔 달라는 요청에는 반드시 도구를 호출한다. 말로만 "추가했습니다" 라고 하지 않는다.',

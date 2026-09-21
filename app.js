@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Saydo — Google Tasks 를 저장소로 쓰는 Todoist 스타일 개인 태스크 매니저
+   Malro — Google Tasks 를 저장소로 쓰는 Todoist 스타일 개인 태스크 매니저
    --------------------------------------------------------------------------
    설계 요약
    · Google Tasks 는 "제목 / 메모 / 날짜 / 완료여부 / 부모" 만 저장 가능.
@@ -17,10 +17,10 @@
 const SCOPE = 'https://www.googleapis.com/auth/tasks email';
 const API = 'https://tasks.googleapis.com/tasks/v1';
 const LS = {
-  cid: 'saydo.clientId', lists: 'saydo.lists', tasks: 'saydo.tasks',
-  view: 'saydo.view', theme: 'saydo.theme', skin: 'saydo.skin', defaultList: 'saydo.defaultList',
-  queue: 'saydo.queue', showDone: 'saydo.showDone', boardBy: 'saydo.boardBy', collapsed: 'saydo.collapsed',
-  token: 'saydo.token', sortBy: 'saydo.sortBy', account: 'saydo.account'
+  cid: 'malro.clientId', lists: 'malro.lists', tasks: 'malro.tasks',
+  view: 'malro.view', theme: 'malro.theme', skin: 'malro.skin', defaultList: 'malro.defaultList',
+  queue: 'malro.queue', showDone: 'malro.showDone', boardBy: 'malro.boardBy', collapsed: 'malro.collapsed',
+  token: 'malro.token', sortBy: 'malro.sortBy', account: 'malro.account'
 };
 
 /* 정렬 기준 — 앱 전체에 하나로 적용된다(뷰별로 따로 두지 않는다).
@@ -78,10 +78,10 @@ const I = {
 };
 
 /* ─────────────────────────── 3.5 데모 모드 ───────────────────────────
-   ?demo=1 로 열거나 window.SAYDO_DEMO = true 이면 Google 연결 없이
+   ?demo=1 로 열거나 window.MALRO_DEMO = true 이면 Google 연결 없이
    가짜 데이터로 UI 전체를 체험할 수 있다. 서버 호출을 일절 하지 않고
    변경 사항도 저장하지 않는다(새로고침하면 초기 상태로 복귀). */
-const DEMO = /[?&]demo/.test(location.search) || window.SAYDO_DEMO === true;
+const DEMO = /[?&]demo/.test(location.search) || window.MALRO_DEMO === true;
 function demoSeed() {
   const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return ymd(x) + 'T00:00:00.000Z'; };
   const lists = [{ id: 'L1', title: '업무' }, { id: 'L2', title: '프로젝트' }, { id: 'L3', title: '개인' }];
@@ -177,7 +177,7 @@ const S = {
   lastSync: 0, listsAt: 0, doneAt: 0,
   trunc: {},          // listId -> true  (1000건 상한에 닿아 일부만 받아온 목록)
   failed: [],         // 이번 동기화에서 받아오지 못한 목록 제목
-  account: store.get('saydo.account') || ''
+  account: store.get('malro.account') || ''
 };
 const save = () => {
   if (DEMO) return;                                  // 데모 모드는 저장하지 않는다

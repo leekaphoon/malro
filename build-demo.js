@@ -7,7 +7,7 @@
  *
  * 만드는 것
  *   demo-wrapped.html  아티팩트용. head 없이 body 콘텐츠만 (아티팩트가 셸을 씌운다)
- *   saydo-demo.html     단독 실행용 완전한 문서
+ *   malro-demo.html     단독 실행용 완전한 문서
  *
  * 실행:  node build-demo.js
  */
@@ -38,21 +38,21 @@ for (const f of SCRIPTS) {
   inlined++;
 }
 
-/* 데모 모드 강제. app.js 는 ?demo= 쿼리 또는 window.SAYDO_DEMO 를 본다.
+/* 데모 모드 강제. app.js 는 ?demo= 쿼리 또는 window.MALRO_DEMO 를 본다.
    단일 파일은 쿼리가 없으니 플래그를 먼저 세워야 한다. */
-const flag = '<script>window.SAYDO_DEMO = true;</script>\n';
+const flag = '<script>window.MALRO_DEMO = true;</script>\n';
 const sw = '<script>if("serviceWorker" in navigator){/* 데모 번들은 SW 를 등록하지 않는다 */}</script>\n';
 
-const inner = `<title>Saydo</title>\n${styleM[0]}\n${flag}${sw}${body}`;
+const inner = `<title>Malro</title>\n${styleM[0]}\n${flag}${sw}${body}`;
 
 fs.writeFileSync('demo-wrapped.html',
   '<!doctype html><html lang="ko"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
   + `</head><body>${inner}</body></html>`);
 
-fs.writeFileSync('saydo-demo.html', inner);
+fs.writeFileSync('malro-demo.html', inner);
 
 const kb = n => (fs.statSync(n).size / 1024).toFixed(0) + 'KB';
 console.log(`▸ 스크립트 ${inlined}개 인라인`);
 console.log(`▸ demo-wrapped.html  ${kb('demo-wrapped.html')}`);
-console.log(`▸ saydo-demo.html     ${kb('saydo-demo.html')}`);
+console.log(`▸ malro-demo.html     ${kb('malro-demo.html')}`);

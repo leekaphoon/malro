@@ -1,4 +1,4 @@
-/* Saydo Voice — Apps Script 백엔드의 순수 로직 검증.
+/* Malro Voice — Apps Script 백엔드의 순수 로직 검증.
    Apps Script 는 로컬에서 못 돌리므로, GAS 전역(PropertiesService 등)을 흉내 낸 뒤
    순수 함수만 core.js 와 대조한다. 핵심 질문: 두 앱이 같은 메타를 쓰는가. */
 'use strict';
@@ -31,7 +31,7 @@ vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync('./voice/Code.gs', 'utf8'), sandbox);
 const G = sandbox;
 
-console.log('\n[메타 인코딩 — Saydo 앱과 동일해야 함]');
+console.log('\n[메타 인코딩 — Malro 앱과 동일해야 함]');
 /* ⚠ 예전에는 비교 직전에 `{ ...meta, rec: null }` 로 **반복을 빼고** 대조했다.
    그래서 "바이트 단위로 같다" 는 검증이 반복에 대해서는 한 번도 이뤄지지 않았고,
    Code.gs 가 ↻ 를 읽지도 쓰지도 않는다는 사실이 가려졌다. 결과는 단순한 누락이 아니라
@@ -447,7 +447,7 @@ console.log('\n[대화형 어시스턴트 — 도구 실행을 서버에서]');
 console.log('\n[GET 폴백 — 302 리디렉션으로 POST 본문이 유실될 때]');
 {
   const get = q => JSON.parse(G.doGet({ parameter: q })._s);
-  A('파라미터가 없으면 상태만 알려준다', get({}).service === 'saydo-voice');
+  A('파라미터가 없으면 상태만 알려준다', get({}).service === 'malro-voice');
   A('action 이 있으면 POST 와 같게 처리', get({ secret: 'abcdefghij', action: 'ping' }).ok === true);
   A('GET 경로에서도 시크릿을 검사한다',
     get({ secret: '틀린값', action: 'ping' }).ok === false);

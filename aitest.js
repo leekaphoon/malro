@@ -108,9 +108,9 @@ const mkTasks = () => ({
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'tok_test', expires_in: 3600 }), 10); }
       }) } } };
       try {
-        localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com');
-        localStorage.setItem('saydo.aiUrl', 'http://localhost:4181');
-        localStorage.setItem('saydo.aiVariant', seed || '');
+        localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
+        localStorage.setItem('malro.aiUrl', 'http://localhost:4181');
+        localStorage.setItem('malro.aiVariant', seed || '');
       } catch (e) {}
     }, variantSeed);
     await page.route('https://tasks.googleapis.com/**', route => {
@@ -236,7 +236,7 @@ const mkTasks = () => ({
   await ask(page2, '기본 경로 확인 추가해 줘');
   A('첫 시도가 generateContent', seen[0].path.includes(':generateContent'), seen.map(s => s.path).join(' | '));
   A('태스크 생성', await page2.evaluate(() => allTasks().some(t => t.title === '기본 경로 확인')));
-  A('형식을 gen 으로 기억', await page2.evaluate(() => localStorage.getItem('saydo.aiVariant')) === 'gen');
+  A('형식을 gen 으로 기억', await page2.evaluate(() => localStorage.getItem('malro.aiVariant')) === 'gen');
   A('히스토리에 functionResponse 포함',
     JSON.stringify(seen[1].body.contents || []).includes('functionResponse'));
   const genSys = ((seen[0].body.systemInstruction || {}).parts || [{}])[0].text || '';
@@ -258,7 +258,7 @@ const mkTasks = () => ({
     seen.length >= 2 && seen[0].path.includes(':generateContent') && seen[1].path === '/v1beta/interactions',
     seen.map(s => s.path).join(' | '));
   A('폴백 후 태스크 생성', await page3.evaluate(() => allTasks().some(t => t.title === '폴백 경로 확인')));
-  A('통한 형식을 기억', await page3.evaluate(() => localStorage.getItem('saydo.aiVariant')) === 'int-input');
+  A('통한 형식을 기억', await page3.evaluate(() => localStorage.getItem('malro.aiVariant')) === 'int-input');
   A('실패한 시도가 히스토리를 오염시키지 않음',
     !JSON.stringify(seen[1].body).includes('generateContent'));
 
@@ -363,19 +363,19 @@ const mkTasks = () => ({
   {
     /* 맥에서 이 경고를 보면 "아이폰 얘기"로 읽고 넘어가 버린다 — 실제로 그랬다.
        맥의 조치(localhost:4173 으로 열기)와 모바일의 제약을 둘 다 말해야 한다. */
-    const msg = await chk('http://localhost:8787', 'saydo.pages.dev', 'https:');
+    const msg = await chk('http://localhost:8787', 'malro.app', 'https:');
     A('공개 https 페이지 + localhost → 문제로 잡는다', !!msg, msg);
     A('맥에서 할 조치를 알려준다', /localhost:4173/.test(msg), msg);
     A('모바일 제약도 함께 설명', /아이폰/.test(msg), msg);
-    A('지금 열린 주소를 그대로 보여준다', /saydo\.pages\.dev/.test(msg), msg);
+    A('지금 열린 주소를 그대로 보여준다', /malro\.app/.test(msg), msg);
   }
   A('공개 https 페이지 + http 프록시 → 혼합 콘텐츠 차단 설명',
-    /브라우저가 차단/.test(await chk('http://proxy.example.com', 'saydo.pages.dev', 'https:')));
+    /브라우저가 차단/.test(await chk('http://proxy.example.com', 'malro.app', 'https:')));
   A('공개 https 페이지 + https 프록시 → 문제 없음',
-    (await chk('https://proxy.example.com', 'saydo.pages.dev', 'https:')) === '');
+    (await chk('https://proxy.example.com', 'malro.app', 'https:')) === '');
   A('주소 형식 오류를 구분',
-    /형식이 올바르지 않/.test(await chk('그냥글자', 'saydo.pages.dev', 'https:')));
-  A('빈 주소는 여기서 판정하지 않음', (await chk('', 'saydo.pages.dev', 'https:')) === '');
+    /형식이 올바르지 않/.test(await chk('그냥글자', 'malro.app', 'https:')));
+  A('빈 주소는 여기서 판정하지 않음', (await chk('', 'malro.app', 'https:')) === '');
 
   /* 실제 호출 경로에서도 막히는가 — 네트워크로 나가기 전에 걸러야 한다 */
   const pG = await boot('gen');
@@ -384,7 +384,7 @@ const mkTasks = () => ({
   seen = []; script = [];
   await pG.evaluate(() => {                       // 오리진만 공개 https 인 것처럼 바꿔 호출
     window.__origProblem = aiUrlProblem;
-    window.aiUrlProblem = u => window.__origProblem(u, { hostname: 'saydo.pages.dev', protocol: 'https:' });
+    window.aiUrlProblem = u => window.__origProblem(u, { hostname: 'malro.app', protocol: 'https:' });
   });
   await ask(pG, '분석해 줘');
   bs = await bubbles(pG);
@@ -408,7 +408,7 @@ const mkTasks = () => ({
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(next) });
     });
     await pg.evaluate(u => {
-      AI.url = u; try { localStorage.setItem('saydo.aiSecret', 'S'.repeat(40)); } catch (e) {}
+      AI.url = u; try { localStorage.setItem('malro.aiSecret', 'S'.repeat(40)); } catch (e) {}
     }, GAS);
     await pg.locator('[data-ai]').click(); await pg.waitForTimeout(250);
     return { pg, seenReq };
@@ -436,7 +436,7 @@ const mkTasks = () => ({
     /* 302 에서 본문이 사라지면 서버는 action 을 못 받아 상태 JSON 을 돌려준다.
        그게 신호다 — 쿼리 방식으로 한 번 더 시도해야 한다. */
     const { pg, seenReq } = await bootGas([
-      { ok: true, service: 'saydo-voice', hasKey: true, hasSecret: true },
+      { ok: true, service: 'malro-voice', hasKey: true, hasSecret: true },
       { ok: true, speak: '쿼리 경로로 처리했습니다.', actions: [], changed: false }
     ]);
     await ask(pg, '오늘 뭐 해야 하지');
@@ -464,7 +464,7 @@ const mkTasks = () => ({
     const pg = await boot('');
     let hit = 0;
     await pg.route('https://script.google.com/**', r => { hit++; r.fulfill({ status: 200, body: '{}' }); });
-    await pg.evaluate(u => { AI.url = u; try { localStorage.removeItem('saydo.aiSecret'); } catch (e) {} }, GAS);
+    await pg.evaluate(u => { AI.url = u; try { localStorage.removeItem('malro.aiSecret'); } catch (e) {} }, GAS);
     await pg.locator('[data-ai]').click(); await pg.waitForTimeout(250);
     await ask(pg, '아무거나');
     const bs5 = await bubbles(pg);
@@ -486,7 +486,7 @@ const mkTasks = () => ({
   const mp = await mctx.newPage();
   await mp.addInitScript(() => {
     window.google = { accounts: { oauth2: { initTokenClient: cfg => ({ callback: cfg.callback, requestAccessToken() { setTimeout(() => this.callback({ access_token: 'tok_test', expires_in: 3600 }), 10); } }) } } };
-    try { localStorage.setItem('saydo.clientId', 'x'); localStorage.setItem('saydo.aiUrl', 'http://localhost:4181'); } catch (e) {}
+    try { localStorage.setItem('malro.clientId', 'x'); localStorage.setItem('malro.aiUrl', 'http://localhost:4181'); } catch (e) {}
   });
   await mp.route('https://tasks.googleapis.com/**', r => {
     const u = new URL(r.request().url());

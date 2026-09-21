@@ -20,7 +20,7 @@ for a in "$@"; do [ "$a" = "--create" ] || { [ -z "$ARG" ] && ARG="$a"; }; done
 
 if [ -n "$ARG" ]; then PROJECT="$ARG"
 elif [ -f "$NAMEFILE" ]; then PROJECT="$(tr -d '[:space:]' < "$NAMEFILE")"
-else PROJECT="saydo"; fi
+else PROJECT="malro"; fi
 
 APP_FILES=(index.html core.js app.js dnd.js ai.js sw.js manifest.webmanifest
            icon-180.png icon-192.png icon-512.png icon-maskable.png)

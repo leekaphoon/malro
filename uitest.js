@@ -66,7 +66,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com');
+      localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
     });
     await page.route('https://tasks.googleapis.com/**', route => {
       const u = new URL(route.request().url());
@@ -199,7 +199,7 @@ const TASKS = {
     const pg = await ctx.newPage();
     await pg.addInitScript(s => {
       window.google = { accounts: { oauth2: { initTokenClient: c => ({ callback: c.callback, requestAccessToken() {} }) } } };
-      try { if (s) localStorage.setItem('saydo.clientId', s); else localStorage.removeItem('saydo.clientId'); } catch (e) {}
+      try { if (s) localStorage.setItem('malro.clientId', s); else localStorage.removeItem('malro.clientId'); } catch (e) {}
     }, seed || '');
     await pg.route('https://tasks.googleapis.com/**', r => r.fulfill({ json: { items: [] } }));
     await pg.route('https://accounts.google.com/**', r => r.fulfill({ body: '', contentType: 'text/javascript' }));
@@ -234,7 +234,7 @@ const TASKS = {
   assert('?cid= 가 저장값보다 우선',
     await cC.evaluate(() => S.clientId === 'fromurl.apps.googleusercontent.com'));
   assert('?cid= 는 이 기기에 저장된다 (다음부터 주소 없이 열어도 유지)',
-    await cC.evaluate(() => localStorage.getItem('saydo.clientId') === 'fromurl.apps.googleusercontent.com'));
+    await cC.evaluate(() => localStorage.getItem('malro.clientId') === 'fromurl.apps.googleusercontent.com'));
 
   /* ── 새로고침해도 다시 로그인하지 않는가 ──
      토큰이 메모리에만 있으면 새로고침마다 무음 재발급을 시도하는데, Safari 의 ITP 가
@@ -257,9 +257,9 @@ const TASKS = {
         }
       }) } } };
       try {
-        localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com');
-        localStorage.setItem('saydo.lists', JSON.stringify([{ id: 'GL_a', title: '프로젝트' }]));
-        if (s) localStorage.setItem('saydo.token', s); else localStorage.removeItem('saydo.token');
+        localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
+        localStorage.setItem('malro.lists', JSON.stringify([{ id: 'GL_a', title: '프로젝트' }]));
+        if (s) localStorage.setItem('malro.token', s); else localStorage.removeItem('malro.token');
       } catch (e) {}
     }, seed);
     await pg.route('https://tasks.googleapis.com/**', r => {
@@ -307,7 +307,7 @@ const TASKS = {
       (await pg.evaluate(() => S.token)) === 'fresh');
     assert('새로 받은 토큰을 저장한다',
       await pg.evaluate(() => {
-        const j = JSON.parse(localStorage.getItem('saydo.token') || 'null');
+        const j = JSON.parse(localStorage.getItem('malro.token') || 'null');
         return !!j && j.t === 'fresh' && j.e > Date.now();
       }));
   }
@@ -323,7 +323,7 @@ const TASKS = {
     await pg.evaluate(() => fullSync(true).catch(() => {}));
     await pg.waitForTimeout(500);
     assert('401 을 받으면 저장된 토큰을 지운다',
-      await pg.evaluate(() => !JSON.parse(localStorage.getItem('saydo.token') || 'null')));
+      await pg.evaluate(() => !JSON.parse(localStorage.getItem('malro.token') || 'null')));
   }
 
   {
@@ -336,7 +336,7 @@ const TASKS = {
     /* 고정 대기(waitForTimeout)로 쓰면 큐 처리와 경합해 간헐적으로 깨진다 — 실제로 3회 중
        2회 실패했다. 시간이 아니라 **조건**을 기다린다. */
     const cleared = await pg.waitForFunction(
-      () => { try { return !JSON.parse(localStorage.getItem('saydo.token') || 'null'); } catch (e) { return true; } },
+      () => { try { return !JSON.parse(localStorage.getItem('malro.token') || 'null'); } catch (e) { return true; } },
       null, { timeout: 5000 }).then(() => true).catch(() => false);
     assert('동기화 스로틀 중에도 사용자 조작은 401 을 즉시 드러낸다', cleared);
   }
@@ -351,9 +351,9 @@ const TASKS = {
         requestAccessToken() { setTimeout(() => cfg.error_callback({ type: 'popup_failed_to_open' }), 10); }
       }) } } };
       try {
-        localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com');
-        localStorage.setItem('saydo.lists', JSON.stringify([{ id: 'GL_a', title: '프로젝트' }]));
-        localStorage.removeItem('saydo.token');
+        localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
+        localStorage.setItem('malro.lists', JSON.stringify([{ id: 'GL_a', title: '프로젝트' }]));
+        localStorage.removeItem('malro.token');
       } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => r.fulfill({ json: { items: [] } }));
@@ -393,10 +393,10 @@ const TASKS = {
         }
       }) } } };
       try {
-        localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com');
-        localStorage.setItem('saydo.lists', JSON.stringify([{ id: 'L1', title: '프로젝트' }]));
-        localStorage.setItem('saydo.tasks', JSON.stringify({ L1: [{ id: 't1', title: '캐시된 할 일', notes: '', status: 'needsAction', position: '001' }] }));
-        localStorage.setItem('saydo.token', JSON.stringify({ t: 'old', e: Date.now() - 1000 }));   // 만료
+        localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
+        localStorage.setItem('malro.lists', JSON.stringify([{ id: 'L1', title: '프로젝트' }]));
+        localStorage.setItem('malro.tasks', JSON.stringify({ L1: [{ id: 't1', title: '캐시된 할 일', notes: '', status: 'needsAction', position: '001' }] }));
+        localStorage.setItem('malro.token', JSON.stringify({ t: 'old', e: Date.now() - 1000 }));   // 만료
       } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => {
@@ -435,7 +435,7 @@ const TASKS = {
     assert('재연결 후 인증 패널은 닫혀 있다',
       !(await pg.locator('#auth').evaluate(e => e.classList.contains('on'))));
     assert('새 토큰이 저장된다',
-      (await pg.evaluate(() => (JSON.parse(localStorage.getItem('saydo.token') || 'null') || {}).t)) === 'fresh');
+      (await pg.evaluate(() => (JSON.parse(localStorage.getItem('malro.token') || 'null') || {}).t)) === 'fresh');
     await ctx.close();
   }
 
@@ -523,7 +523,7 @@ const TASKS = {
     assert('기한 없는 항목은 마감일순에서 맨 뒤', l3[l3.length - 1] === '주말', JSON.stringify(l3));
 
     /* ④ 저장·드래그 개폐 */
-    assert('선택한 기준을 저장한다', (await sp.evaluate(() => localStorage.getItem('saydo.sortBy'))) === 'due');
+    assert('선택한 기준을 저장한다', (await sp.evaluate(() => localStorage.getItem('malro.sortBy'))) === 'due');
     assert('마감일순 목록 뷰에서는 순서 드래그가 꺼진다',
       !(await sp.locator('#wrap').evaluate(e => e.classList.contains('dnd-on'))));
     await pick('manual');
@@ -569,7 +569,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => {
       const u = new URL(r.request().url());
@@ -646,7 +646,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     /* 스텁이 **진짜 API 처럼** 군다 — completedMin 을 실제로 적용한다. 스텁이 무조건 전부
        돌려주면 필터가 빠져 있어도 테스트가 통과해 버린다(정렬 테스트에서 겪은 그 함정). */
@@ -719,7 +719,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     // 끝나지 않는 목록 — 페이지마다 100건에 nextPageToken 이 계속 따라온다
     await pg.route('https://tasks.googleapis.com/**', r => {
@@ -767,7 +767,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => {
       const u = new URL(r.request().url());
@@ -822,7 +822,7 @@ const TASKS = {
       await pg.locator('#sbAcct').innerText().catch(() => '(없음)'));
     assert('계정 표시가 실제로 화면에 보인다', await pg.locator('#sbAcct').isVisible());
     assert('계정을 기억해 다음 실행에서 바로 보여 준다',
-      (await pg.evaluate(() => localStorage.getItem('saydo.account'))) === 'you@example.com');
+      (await pg.evaluate(() => localStorage.getItem('malro.account'))) === 'you@example.com');
 
     /* 전환은 이전 계정의 캐시를 반드시 비워야 한다 — 안 그러면 남의 할 일이 섞여 보인다.
        스텁이 토큰을 곧바로 돌려주면 다시 채워지므로(그게 정상 동작이다), 여기서는
@@ -839,7 +839,7 @@ const TASKS = {
     assert('전환하면 이전 계정의 태스크 캐시를 비운다',
       await pg.evaluate(() => Object.keys(S.tasks).length === 0 && S.lists.length === 0));
     assert('전환하면 저장된 토큰도 버린다',
-      await pg.evaluate(() => !JSON.parse(localStorage.getItem('saydo.token') || 'null')));
+      await pg.evaluate(() => !JSON.parse(localStorage.getItem('malro.token') || 'null')));
     assert('전환하면 계정 표시도 지운다', await pg.evaluate(() => !S.account));
     await pg.context().close();
   }
@@ -861,7 +861,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => {
       const u = new URL(r.request().url()), m = r.request().method();
@@ -916,7 +916,7 @@ const TASKS = {
         callback: cfg.callback,
         requestAccessToken() { setTimeout(() => this.callback({ access_token: 'fake', expires_in: 3600 }), 10); }
       }) } } };
-      try { localStorage.setItem('saydo.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
+      try { localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com'); } catch (e) {}
     });
     await pg.route('https://tasks.googleapis.com/**', r => {
       const u = new URL(r.request().url()), m = r.request().method();

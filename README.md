@@ -1,4 +1,4 @@
-# Saydo — 말로 쓰는 할 일
+# Malro (말로) — 말로 쓰는 할 일
 
 한국어로 말하면 알아듣는 태스크 앱. 데이터는 **사용자 본인의 Google Tasks** 에만 저장되고,
 브라우저가 Google API 를 직접 호출한다. **중앙 서버가 없다.**
@@ -18,11 +18,11 @@
 
 ## In English
 
-**Saydo is a Korean-language task app with no backend.** It stores everything in the
+**Malro** (말로, *"by speaking"* in Korean) **is a Korean-language task app with no backend.** It stores everything in the
 user's own Google Tasks; the browser calls the Google API directly. There is no server
 of mine holding your data, because there is no server.
 
-Google Tasks gives you five fields — title, notes, due date, status, parent. Saydo adds
+Google Tasks gives you five fields — title, notes, due date, status, parent. Malro adds
 priority, labels, time-of-day, recurrence and duration by encoding them into the last
 line of `notes` as `⟦p1 @field ⏰14:00 ↻w1:1 ⏳90⟧`. The app hides that line; other
 Google clients show it. That trade-off, and what it costs, is the most interesting part
@@ -263,10 +263,16 @@ Google Tasks API 는 목록을 지우면 **안의 태스크까지 함께 지우�
 | 항목 | 상태 |
 |---|---|
 | `app.js` 의 `DEFAULT_CLIENT_ID` | ✅ **완료** — 개인 계정 프로젝트 `345139066407` 에서 발급 |
-| OAuth 동의 화면 | 외부(External) + `auth/tasks` 는 민감 범위 → **검증 필요**(개인정보처리방침·도메인 소유 확인·데모 영상, 3~5영업일, 무료) |
-| 승인된 JavaScript 원본 | `http://localhost:4173` 등록됨. **배포 후 Pages 주소 추가 필요** |
-| Cloudflare Pages 프로젝트 | `.pages-project` = `saydo` — 개인 계정으로 새로 생성 |
+| OAuth 동의 화면 | 외부(External) + `auth/tasks` 는 **민감 범위** → 검증 필요. 개인정보처리방침·도메인 소유 확인·데모 영상, 심사 **약 10영업일**, 무료 |
+| 승인된 JavaScript 원본 | `http://localhost:4173` + 배포 주소(`https://malro.app`) |
+| Cloudflare 배포 | **Workers 정적 자산** + GitHub 연동. `wrangler.jsonc` 가 `build.sh` 로 앱 파일 11개만 골라 `dist/` 를 서빙한다. push 하면 자동 배포 |
 | Apps Script (AI 백엔드) | 사용자가 각자 배포 — `voice/README.md` 참고 |
+
+> ⚠ **검증 전에 홍보하지 말 것.** 민감 범위를 쓰는 미검증 앱에는 **누적 100명**의 사용자
+> 상한이 걸린다. 동시 접속 100명이 아니라 **프로젝트 수명 전체에 걸친 누적치이고,
+> 초기화할 수 없다.** 상한에 닿으면 Cloud 프로젝트를 새로 만들어 클라이언트 ID 를
+> 갈아야 한다. 심사가 약 10영업일 걸리므로, 공개 글을 쓰기 **전에** 신청해 두는 편이 낫다.
+> (출처: Google OAuth 검증 FAQ, 2026-09 확인)
 
 ### OAuth 클라이언트 발급 절차
 
@@ -282,7 +288,7 @@ Cloud Console 의 메뉴 구조는 자주 바뀐다. **직접 주소로 들어�
 
 | 칸 | 값 |
 |---|---|
-| 앱 이름 | `Saydo` |
+| 앱 이름 | `Malro` |
 | 사용자 지원 이메일 | 본인 개인 Gmail |
 | 대상(Audience) | **외부(External)** — 개인 계정은 이것만 선택 가능 |
 | 연락처 이메일 | 본인 개인 Gmail |
@@ -300,16 +306,16 @@ Cloud Console 의 메뉴 구조는 자주 바뀐다. **직접 주소로 들어�
 | 칸 | 값 |
 |---|---|
 | 애플리케이션 유형 | **웹 애플리케이션** |
-| 이름 | `Saydo Web` |
-| **승인된 JavaScript 원본** | `http://localhost:4173` (배포 후 Pages 주소를 여기 추가) |
+| 이름 | `Malro Web` |
+| **승인된 JavaScript 원본** | `http://localhost:4173` 과 배포 주소 (예: `https://malro.app`) |
 | 승인된 리디렉션 URI | **비워 둔다** — 토큰 클라이언트 방식이라 쓰지 않는다 |
 
 원본은 **오리진만** 넣는다. 경로도 끝 슬래시도 안 된다.
 
 ```
-https://saydo-ab12.pages.dev          ○
-https://saydo-ab12.pages.dev/         ✗
-https://saydo-ab12.pages.dev/index.html   ✗
+https://malro.app          ○
+https://malro.app/         ✗
+https://malro.app/index.html   ✗
 ```
 
 **5. 생성된 클라이언트 ID 를 `app.js` 의 `DEFAULT_CLIENT_ID` 에 붙여넣는다.**

@@ -61,7 +61,7 @@ const PORT = 4207, ORIGIN = `http://localhost:${PORT}`;
 
     /* 리디렉션 이력이 붙은 응답을 캐시에 남기면 다음부터 네트워크 없이도 계속 실패한다 */
     const dirty = await pg.evaluate(async () => {
-      const c = await caches.open((await caches.keys()).find(k => k.startsWith('saydo-')));
+      const c = await caches.open((await caches.keys()).find(k => k.startsWith('malro-')));
       const rs = await Promise.all((await c.keys()).map(k => c.match(k)));
       return rs.filter(r => r && r.redirected).length;
     });

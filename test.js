@@ -1,4 +1,4 @@
-/* Saydo core 단위 테스트 — node test.js */
+/* Malro core 단위 테스트 — node test.js */
 const C = require('./core.js');
 let pass = 0, fail = 0;
 const eq = (name, got, want) => {

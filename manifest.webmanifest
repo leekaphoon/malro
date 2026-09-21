@@ -1,6 +1,6 @@
 {
-  "name": "Saydo",
-  "short_name": "Saydo",
+  "name": "Malro",
+  "short_name": "Malro",
   "description": "Google Tasks 기반 개인 태스크 매니저",
   "start_url": "./",
   "scope": "./",

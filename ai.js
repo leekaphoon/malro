@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Saydo AI — Gemini function calling 기반 태스크 어시스턴트
+   Malro AI — Gemini function calling 기반 태스크 어시스턴트
    --------------------------------------------------------------------------
    구조
      [챗 패널] → [어댑터] → [Cloudflare Worker 프록시] → [Gemini]
@@ -20,7 +20,7 @@
    ========================================================================== */
 'use strict';
 
-const AI_LS = { url: 'saydo.aiUrl', model: 'saydo.aiModel', variant: 'saydo.aiVariant' };
+const AI_LS = { url: 'malro.aiUrl', model: 'malro.aiModel', variant: 'malro.aiVariant' };
 /* 뒤의 두 별칭은 은퇴하지 않는다. 모델 이름이 사라져 404 가 나는 사고를 겪은 뒤 추가했다. */
 const AI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
   'gemini-flash-lite-latest', 'gemini-flash-latest'];
@@ -143,7 +143,7 @@ const AI_TOOLS = [
 
 function aiSystem(snap) {
   return [
-    '너는 Saydo 라는 개인 태스크 관리 앱의 어시스턴트다. 한국어로 간결하게 답한다.',
+    '너는 Malro 라는 개인 태스크 관리 앱의 어시스턴트다. 한국어로 간결하게 답한다.',
     '',
     '규칙:',
     '- 태스크를 만들거나 바꿔 달라는 요청에는 반드시 도구를 호출한다. 말로만 "추가했습니다" 라고 하지 않는다.',
@@ -458,7 +458,7 @@ const isAppsScript = u => /(^|\/\/)script\.google\.com\//.test(String(u || ''));
 
 async function aiAskScript(text) {
   const url = AI.url.replace(/\/+$/, '');
-  const secret = store.get('saydo.aiSecret') || '';
+  const secret = store.get('malro.aiSecret') || '';
   if (!secret) throw new Error('Apps Script 백엔드에는 시크릿이 필요합니다. 설정에서 넣어 주세요.');
 
   const history = AI.msgs.filter(m => m.role === 'user' || m.role === 'ai')
@@ -606,7 +606,7 @@ function aiRenderSettings() {
     <div class="field"><label>프록시 주소</label>
       <input id="aiUrl" placeholder="맥: http://localhost:8787  ·  전 기기: Apps Script 웹앱 주소" value="${esc(AI.url)}" spellcheck="false"></div>
     <div class="field" id="aiSecField"><label>Apps Script 시크릿</label>
-      <input id="aiSecret" type="password" placeholder="setupSecret 로 만든 40자" value="${esc(store.get('saydo.aiSecret') || '')}" spellcheck="false" autocomplete="off"></div>
+      <input id="aiSecret" type="password" placeholder="setupSecret 로 만든 40자" value="${esc(store.get('malro.aiSecret') || '')}" spellcheck="false" autocomplete="off"></div>
     <div class="field"><label>모델</label>
       <select id="aiModel" class="pill" style="width:100%">
         ${AI_MODELS.map(m => `<option value="${m}"${m === AI.model ? ' selected' : ''}>${m}</option>`).join('')}
@@ -632,7 +632,7 @@ function aiRenderSettings() {
   $('aiSave').onclick = () => {
     const u = $('aiUrl').value.trim();
     AI.url = u; store.set(AI_LS.url, u);
-    store.set('saydo.aiSecret', $('aiSecret').value.trim());
+    store.set('malro.aiSecret', $('aiSecret').value.trim());
     AI.model = $('aiModel').value; store.set(AI_LS.model, AI.model);
     AI.variant = ''; store.set(AI_LS.variant, '');      // 모델·주소가 바뀌면 형식 재탐색
     s.classList.remove('on'); toast('저장했습니다');
