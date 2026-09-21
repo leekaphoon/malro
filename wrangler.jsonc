@@ -1,0 +1,8 @@
+{
+  // Cloudflare Workers 정적 자산 배포 설정.
+  // 저장소 전체가 아니라 build.sh 가 골라낸 dist/ 만 서빙한다.
+  "name": "saydo",
+  "compatibility_date": "2026-09-01",
+  "build": { "command": "bash build.sh" },
+  "assets": { "directory": "./dist" }
+}
