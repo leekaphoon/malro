@@ -1586,8 +1586,8 @@ function applySkin(v) {
    실행할 때마다 핀치 배율을 잊으므로, 이렇게 저장해 두면 매번 다시 키울 필요가 없다.
    기기별 취향이라 localStorage 에만 둔다(서버로 안 보낸다). */
 function applyZoom(v) { document.documentElement.style.zoom = (v && v !== '1') ? v : ''; }
-const ZOOMS = ['1', '1.15', '1.3'];
-const ZOOM_LABEL = { '1': '보통', '1.15': '크게', '1.3': '더 크게' };
+const ZOOMS = ['1', '1.3', '1.5'];
+const ZOOM_LABEL = { '1': '보통', '1.3': '크게', '1.5': '아주 크게' };
 
 const th = store.get(LS.theme); if (th && !DEMO) document.documentElement.setAttribute('data-theme', th);
 const sk = store.get(LS.skin); if (sk && !DEMO) applySkin(sk);
