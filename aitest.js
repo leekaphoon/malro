@@ -481,6 +481,93 @@ const mkTasks = () => ({
   A('연결 확인 성공 표시', /연결됨/.test(await page3.locator('#aiMsg').innerText()));
   await page3.screenshot({ path: 'shot-21-chat-settings.png' });
 
+  /* ── 7.5 직접 키 모드 — 브라우저가 Gemini 를 직접 호출 (서버 불필요) ── */
+  console.log('\n[직접 키 모드 · Gemini 직접 호출]');
+  {
+    const TASKS = mkTasks();
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'ko-KR', timezoneId: 'Asia/Seoul' });
+    const pg = await ctx.newPage();
+    pg.on('pageerror', e => errs.push('PAGEERROR(direct): ' + e.message));
+    await pg.addInitScript(() => {
+      window.google = { accounts: { oauth2: { initTokenClient: cfg => ({ callback: cfg.callback,
+        requestAccessToken() { setTimeout(() => this.callback({ access_token: 'tok_test', expires_in: 3600 }), 10); } }) } } };
+      try {
+        localStorage.setItem('malro.clientId', 'test.apps.googleusercontent.com');
+        localStorage.setItem('malro.aiKey', 'AIza-TEST-KEY');   // 직접 키 — 프록시 주소는 넣지 않는다
+      } catch (e) {}
+    });
+    const gem = [];      // Gemini 로 나간 요청 기록
+    let gcall = 0;
+    await pg.route('https://generativelanguage.googleapis.com/**', route => {
+      const rq = route.request();
+      gem.push({ url: rq.url(), apiKey: rq.headers()['x-goog-api-key'] || '', auth: rq.headers()['authorization'] || '' });
+      const resp = gcall++ === 0
+        ? genCall([{ name: 'create_task', args: { title: '직접키로 만든 일', list: '업무' } }])
+        : genCall([], '직접키로 만든 일을 업무에 추가했습니다.');
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(resp.body) });
+    });
+    await pg.route('https://tasks.googleapis.com/**', route => {
+      const u = new URL(route.request().url()), method = route.request().method();
+      if (u.pathname.endsWith('/users/@me/lists')) return route.fulfill({ json: { items: LISTS } });
+      const lm = u.pathname.match(/\/lists\/([^/]+)\/tasks$/);
+      if (lm && method === 'GET') return route.fulfill({ json: { items: TASKS[lm[1]] || [] } });
+      if (method === 'POST') {
+        const b = JSON.parse(route.request().postData() || '{}');
+        const created = { ...b, id: 'gid_d' + Math.random().toString(36).slice(2, 6), position: '900' };
+        const lid = (u.pathname.match(/\/lists\/([^/]+)\/tasks/) || [])[1];
+        if (lid) (TASKS[lid] = TASKS[lid] || []).push(created);
+        return route.fulfill({ json: created });
+      }
+      return route.fulfill({ status: 204, body: '' });
+    });
+    await pg.route('https://accounts.google.com/**', r => r.fulfill({ body: '', contentType: 'text/javascript' }));
+    await pg.goto('http://localhost:4180/index.html');
+    await pg.waitForTimeout(300);
+    await pg.locator('#authBtn').click();
+    await pg.waitForTimeout(800);
+
+    const seenBefore = seen.length;   // 구 프록시(localhost:4181)로 나간 요청 수 스냅샷
+    await pg.locator('[data-ai]').click();
+    await pg.waitForTimeout(300);
+    await pg.locator('#chatInput').fill('업무에 직접키로 만든 일 추가해줘');
+    await pg.locator('#chatSend').click();
+    await pg.waitForFunction(() => !document.querySelector('.bub.typing'), null, { timeout: 15000 }).catch(() => {});
+    await pg.waitForTimeout(500);
+
+    A('Gemini 로 직접 나갔다', gem.length >= 1, JSON.stringify(gem[0] || {}));
+    A('x-goog-api-key 헤더로 키를 실었다', !!(gem[0] && gem[0].apiKey === 'AIza-TEST-KEY'), JSON.stringify(gem[0] || {}));
+    A('OAuth Bearer 는 Gemini 로 보내지 않았다', !!(gem[0] && !gem[0].auth), (gem[0] || {}).auth);
+    A('모델을 URL 로 지정했다', !!(gem[0] && /\/models\/[^:]+:generateContent/.test(gem[0].url)), (gem[0] || {}).url);
+    A('구 프록시는 부르지 않았다', seen.length === seenBefore, `proxy +${seen.length - seenBefore}`);
+    A('도구가 브라우저에서 실행돼 태스크가 생성됐다',
+      await pg.evaluate(() => allTasks().some(t => t.title === '직접키로 만든 일')));
+    A('AI 답변이 화면에 나온다', /추가했습니다/.test(await pg.locator('#chatBody').innerText()));
+    await ctx.close();
+
+    /* 설정 UI — 키만 넣으면 되는 구조인지 */
+    const s2 = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'ko-KR' });
+    const p2 = await s2.newPage();
+    await p2.addInitScript(() => {
+      window.google = { accounts: { oauth2: { initTokenClient: cfg => ({ callback: cfg.callback,
+        requestAccessToken() { setTimeout(() => this.callback({ access_token: 'tok_test', expires_in: 3600 }), 10); } }) } } };
+      try { localStorage.setItem('malro.clientId', 'x'); } catch (e) {}   // 키·프록시 아무것도 없음
+    });
+    await p2.route('https://tasks.googleapis.com/**', r => {
+      const u = new URL(r.request().url());
+      if (u.pathname.endsWith('/users/@me/lists')) return r.fulfill({ json: { items: LISTS } });
+      return r.fulfill({ json: { items: [] } });
+    });
+    await p2.route('https://accounts.google.com/**', r => r.fulfill({ body: '', contentType: 'text/javascript' }));
+    await p2.goto('http://localhost:4180/index.html');
+    await p2.waitForTimeout(300); await p2.locator('#authBtn').click(); await p2.waitForTimeout(700);
+    await p2.locator('[data-ai]').click(); await p2.waitForTimeout(300);
+    A('키 미설정 시 안내가 키 기준이다', /Gemini API 키/.test(await p2.locator('#chatBody').innerText()));
+    await p2.locator('#chatCog').click(); await p2.waitForTimeout(200);
+    A('설정에 Gemini API 키 칸이 있다', (await p2.locator('#aiKey').count()) === 1);
+    A('프록시·시크릿은 고급으로 접혀 있다', !(await p2.locator('#aiAdv').evaluate(e => e.open)));
+    await s2.close();
+  }
+
   /* ── 8. 모바일 ── */
   const mctx = await browser.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3, locale: 'ko-KR' });
   const mp = await mctx.newPage();

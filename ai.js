@@ -20,7 +20,7 @@
    ========================================================================== */
 'use strict';
 
-const AI_LS = { url: 'malro.aiUrl', model: 'malro.aiModel', variant: 'malro.aiVariant' };
+const AI_LS = { url: 'malro.aiUrl', model: 'malro.aiModel', variant: 'malro.aiVariant', key: 'malro.aiKey' };
 /* 뒤의 두 별칭은 은퇴하지 않는다. 모델 이름이 사라져 404 가 나는 사고를 겪은 뒤 추가했다. */
 const AI_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite',
   'gemini-flash-lite-latest', 'gemini-flash-latest'];
@@ -29,6 +29,7 @@ const AI_MAX_OUT = 8192;                   // 분석 답변이 잘리지 않도�
 
 const AI = {
   url: store.get(AI_LS.url) || '',
+  key: store.get(AI_LS.key) || '',   // Gemini API 키 — 있으면 브라우저가 직접 호출(서버 불필요)
   model: store.get(AI_LS.model) || AI_MODELS[0],
   variant: store.get(AI_LS.variant) || '',   // '' = 미확정, 'int-input' | 'int-user_input' | 'gen'
   open: false, busy: false,
@@ -290,31 +291,50 @@ function aiUrlProblem(url, loc) {
   return '';
 }
 
-/** 프록시 호출. 형식이 미확정이면 통하는 형식을 찾아 기억한다. */
+/** Gemini 호출.
+ *  두 갈래다:
+ *   · 직접(direct) — AI.key 가 있으면 브라우저가 Gemini 를 바로 부른다. 서버가 없다.
+ *     할 일 변경은 이 파일의 aiRunTool 이 앱의 로그인 토큰으로 처리한다(프록시와 동일).
+ *   · 프록시 — 예전 방식(워커·맥·Apps Script). 형식이 미확정이면 통하는 것을 찾아 기억한다.
+ *  키가 설정돼 있으면 직접 방식을 우선한다 — 사용자가 "설정에 키만 등록" 하는 경로다. */
 async function aiSend(opts) {
-  if (!AI.url) throw new Error('프록시 주소가 설정되지 않았습니다');
-  const bad = aiUrlProblem(AI.url);
-  if (bad) throw new Error(bad);
-  const token = await ensureToken();
-  if (!token) throw new Error('Google 계정 연결이 필요합니다');
+  const direct = !!AI.key;
+  let token = '';
+  if (!direct) {
+    if (!AI.url) throw new Error('Gemini API 키 또는 프록시 주소가 설정되지 않았습니다');
+    const bad = aiUrlProblem(AI.url);
+    if (bad) throw new Error(bad);
+    token = await ensureToken();
+    if (!token) throw new Error('Google 계정 연결이 필요합니다');
+  }
 
-  /* 순서는 실측 근거를 따른다. 2026-08 기준 generateContent 는 확실히 동작하고
+  /* 직접 방식은 네이티브 generateContent('gen') 만 쓴다. Interactions 폴백은 프록시용이다.
+     순서는 실측 근거를 따른다. 2026-08 기준 generateContent 는 확실히 동작하고
      Interactions 는 계정·모델에 따라 열려 있지 않을 수 있어 뒤로 보낸다. */
-  const order = AI.variant ? [AI.variant] : ['gen', 'int-input', 'int-user_input'];
+  const order = direct ? ['gen'] : (AI.variant ? [AI.variant] : ['gen', 'int-input', 'int-user_input']);
   let lastErr = null;
   for (const variant of order) {
     const before = AI.contents.length;
     const body = aiBuildRequest(variant, opts);
+    let url, headers;
+    if (direct) {
+      /* __path·model 은 프록시 라우팅용 여분 필드다. Gemini 는 모델을 URL 로 받으므로 뺀다. */
+      const model = AI.model || 'gemini-flash-latest';
+      delete body.__path; delete body.model;
+      url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+      headers = { 'Content-Type': 'application/json', 'x-goog-api-key': AI.key };  // 키를 URL 이 아닌 헤더로 — 로그에 안 남는다
+    } else {
+      url = AI.url.replace(/\/+$/, '');
+      headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
+    }
     let r, txt;
     try {
-      r = await fetch(AI.url.replace(/\/+$/, ''), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify(body)
-      });
+      r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
       txt = await r.text();
     } catch (e) {
-      throw new Error('프록시에 연결하지 못했습니다. 주소와 배포 상태를 확인해 주세요.');
+      throw new Error(direct
+        ? 'Gemini 에 연결하지 못했습니다. 키와 네트워크를 확인해 주세요.'
+        : '프록시에 연결하지 못했습니다. 주소와 배포 상태를 확인해 주세요.');
     }
     if (r.ok) {
       if (!AI.variant) { AI.variant = variant; store.set(AI_LS.variant, variant); }
@@ -324,11 +344,28 @@ async function aiSend(opts) {
       return parsed;
     }
     AI.contents.length = before;                    // 실패한 시도의 히스토리 오염 제거
-    lastErr = aiHttpError(r.status, txt);
+    lastErr = direct ? aiDirectError(r.status, txt) : aiHttpError(r.status, txt);
     if (r.status === 401 || r.status === 403 || r.status === 429) throw new Error(lastErr);
-    if (AI.variant) throw new Error(lastErr);       // 이미 확정된 형식이면 폴백하지 않는다
+    if (AI.variant || direct) throw new Error(lastErr);   // 형식이 확정됐거나 직접 방식이면 폴백하지 않는다
   }
   throw new Error(lastErr || '요청이 실패했습니다');
+}
+
+/* 직접 방식에서 Gemini 가 돌려주는 오류를 사람 말로. 지어내지 않고 원문 message 를 덧붙인다. */
+function aiDirectError(status, txt) {
+  let msg = '';
+  try { const j = JSON.parse(txt); msg = (j.error && (j.error.message || j.error.status)) || ''; }
+  catch (e) { msg = String(txt || '').slice(0, 200); }
+  const map = {
+    400: 'Gemini 요청 오류 (400) — API 키 형식이나 모델을 확인해 주세요',
+    401: 'Gemini API 키 인증에 실패했습니다',
+    403: 'Gemini API 키가 거부됐습니다 — AI Studio 에서 발급한 유효한 키인지 확인해 주세요',
+    404: '모델을 찾을 수 없습니다 — 설정에서 "…-latest" 모델을 선택해 보세요',
+    429: 'Gemini 호출 한도에 걸렸습니다 — 잠시 후 다시 시도하거나 결제를 활성화하세요',
+    500: 'Gemini 내부 오류입니다. 잠시 후 다시 시도해 주세요',
+    503: 'Gemini 가 일시적으로 과부하 상태입니다. 잠시 후 다시 시도해 주세요'
+  };
+  return (map[status] || `Gemini 요청 실패 (${status})`) + (msg ? ` — ${String(msg).slice(0, 200)}` : '');
 }
 
 /* 401 의 실제 사유. 이걸 감추면 "왜 안 되는지" 를 찾는 데 시간이 오래 걸린다. */
@@ -491,9 +528,10 @@ async function aiAskScript(text) {
 
 async function aiAsk(text) {
   if (AI.busy) return;
-  if (!AI.url) { aiPush('err', '먼저 프록시 주소를 설정해 주세요. 우측 상단 톱니 버튼입니다.'); return; }
+  if (!AI.key && !AI.url) { aiPush('err', '먼저 Gemini API 키를 설정해 주세요. 우측 상단 톱니 버튼입니다.'); aiRender(); return; }
 
-  if (isAppsScript(AI.url)) {
+  /* 키가 있으면 직접 방식(아래 orchestration). Apps Script 경로는 키가 없을 때만. */
+  if (!AI.key && isAppsScript(AI.url)) {
     AI.busy = true; aiPush('user', text); aiRender();
     try {
       const j = await aiAskScript(text);
@@ -581,8 +619,8 @@ function aiRender() {
       <p>할 일을 말로 정리하세요</p>
       <div class="sm">"다음주 화요일까지 회귀테스트 계획 잡고<br>담당 이슈 3개를 서브태스크로 넣어 줘"</div>
       <div class="chips">${AI_PRESETS.map(([l], i) => `<button class="chip-btn" data-preset="${i}">${esc(l)}</button>`).join('')}</div>
-      ${DEMO ? '<div class="sm" style="margin-top:18px;opacity:.85">데모에서는 AI 호출이 비활성화됩니다.<br>실제 사용에는 Cloudflare Worker 프록시가 필요합니다.</div>'
-             : (!AI.url ? '<div class="sm" style="margin-top:18px;color:var(--p1)">프록시 주소가 설정되지 않았습니다 — 우측 상단 톱니</div>' : '')}
+      ${DEMO ? '<div class="sm" style="margin-top:18px;opacity:.85">데모에서는 AI 호출이 비활성화됩니다.<br>실제 사용에는 Gemini API 키가 필요합니다.</div>'
+             : (!AI.key && !AI.url ? '<div class="sm" style="margin-top:18px;color:var(--p1)">Gemini API 키가 설정되지 않았습니다 — 우측 상단 톱니</div>' : '')}
     </div>`;
   } else {
     box.innerHTML = AI.msgs.map(m => {
@@ -603,18 +641,22 @@ function aiRender() {
 function aiRenderSettings() {
   const s = $('chatSettings');
   s.innerHTML = `
-    <div class="field"><label>프록시 주소</label>
-      <input id="aiUrl" placeholder="맥: http://localhost:8787  ·  전 기기: Apps Script 웹앱 주소" value="${esc(AI.url)}" spellcheck="false"></div>
-    <div class="field" id="aiSecField"><label>Apps Script 시크릿</label>
-      <input id="aiSecret" type="password" placeholder="setupSecret 로 만든 40자" value="${esc(store.get('malro.aiSecret') || '')}" spellcheck="false" autocomplete="off"></div>
+    <div class="field"><label>Gemini API 키 <span style="color:var(--muted);font-weight:400">— 직접 연결 (서버 불필요, 권장)</span></label>
+      <input id="aiKey" type="password" placeholder="AI Studio(aistudio.google.com) 에서 발급" value="${esc(AI.key)}" spellcheck="false" autocomplete="off"></div>
     <div class="field"><label>모델</label>
       <select id="aiModel" class="pill" style="width:100%">
         ${AI_MODELS.map(m => `<option value="${m}"${m === AI.model ? ' selected' : ''}>${m}</option>`).join('')}
       </select></div>
-    <p class="note">API 키는 이 브라우저에 저장되지 않습니다. 프록시 서버에만 있습니다.
-      태스크 제목이 Gemini 로 전송되므로 <b>유료 티어 키</b>를 쓰십시오 — 무료 티어는 약관상
-      Google 이 학습에 사용하고 사람이 검토할 수 있습니다.<br>
-      아이폰·아이패드에서는 <b>localhost 가 닿지 않습니다</b>. 맥의 프록시를 쓰려면 공개 주소가 필요합니다.</p>
+    <details id="aiAdv"><summary style="cursor:pointer;color:var(--muted);font-size:12.5px;padding:2px 0">고급 — 프록시 / Apps Script (시리 연동 시)</summary>
+      <div class="field" style="margin-top:8px"><label>프록시 주소</label>
+        <input id="aiUrl" placeholder="맥: http://localhost:8787  ·  Apps Script 웹앱 주소" value="${esc(AI.url)}" spellcheck="false"></div>
+      <div class="field" id="aiSecField"><label>Apps Script 시크릿</label>
+        <input id="aiSecret" type="password" placeholder="setupSecret 로 만든 40자" value="${esc(store.get('malro.aiSecret') || '')}" spellcheck="false" autocomplete="off"></div>
+    </details>
+    <p class="note">키는 <b>이 브라우저에만</b> 저장되고, 브라우저가 Gemini 를 직접 부릅니다. 내 할 일은
+      이미 로그인된 권한으로 처리되므로 <b>따로 서버를 세울 필요가 없습니다.</b> 태스크 제목이 Gemini 로
+      전송되니, 민감하면 학습에 쓰이지 않는 <b>유료 티어 키</b>를 권합니다.<br>
+      키를 비우고 프록시 주소를 넣으면 예전 방식(Apps Script 등)으로 동작합니다.</p>
     <div class="row">
       <button class="btn ghost" id="aiTest">연결 확인</button>
       <div class="spacer"></div>
@@ -623,23 +665,37 @@ function aiRenderSettings() {
     <div class="err hide" id="aiMsg"></div>`;
   s.classList.add('on');
 
-  /* 시크릿 칸은 Apps Script 주소일 때만 의미가 있다 — 맥 로컬 프록시는 Google 토큰으로
-     인증하므로 시크릿을 쓰지 않는다. 쓰이지 않는 칸을 띄워 두면 헷갈린다. */
+  /* 고급 칸을 이미 쓰던 사람은 펼쳐서 보여 준다. 시크릿 칸은 Apps Script 주소일 때만 의미가 있다. */
+  if (AI.url) $('aiAdv').open = true;
   const syncSecField = () => $('aiSecField').classList.toggle('hide', !isAppsScript($('aiUrl').value));
   syncSecField();
   $('aiUrl').addEventListener('input', syncSecField);
 
   $('aiSave').onclick = () => {
+    AI.key = $('aiKey').value.trim(); store.set(AI_LS.key, AI.key);
     const u = $('aiUrl').value.trim();
     AI.url = u; store.set(AI_LS.url, u);
     store.set('malro.aiSecret', $('aiSecret').value.trim());
     AI.model = $('aiModel').value; store.set(AI_LS.model, AI.model);
-    AI.variant = ''; store.set(AI_LS.variant, '');      // 모델·주소가 바뀌면 형식 재탐색
+    AI.variant = ''; store.set(AI_LS.variant, '');      // 모델·주소·키가 바뀌면 형식 재탐색
     s.classList.remove('on'); toast('저장했습니다');
   };
   $('aiTest').onclick = async () => {
-    const el = $('aiMsg'); el.classList.remove('hide'); el.textContent = '확인 중…';
+    const el = $('aiMsg'); el.classList.remove('hide'); el.style.color = 'var(--muted)'; el.textContent = '확인 중…';
+    const key = $('aiKey').value.trim();
+    /* 키가 있으면 직접 방식 — 모델 목록을 한 번 불러 키 유효성만 본다(토큰 소모 없음). */
+    if (key) {
+      try {
+        const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models', { headers: { 'x-goog-api-key': key } });
+        if (r.ok) { el.style.color = 'var(--ok)'; el.textContent = '키 유효 · Gemini 에 직접 연결됩니다'; }
+        else { el.style.color = 'var(--p1)'; el.textContent = aiDirectError(r.status, await r.text()); }
+      } catch (e) {
+        el.style.color = 'var(--p1)'; el.textContent = 'Gemini 에 연결하지 못했습니다 — 네트워크를 확인해 주세요';
+      }
+      return;
+    }
     const u = $('aiUrl').value.trim().replace(/\/+$/, '');
+    if (!u) { el.style.color = 'var(--p1)'; el.textContent = 'Gemini API 키를 넣거나, 고급에서 프록시 주소를 넣어 주세요'; return; }
     const bad = aiUrlProblem(u);
     if (bad) { el.style.color = 'var(--p1)'; el.textContent = bad; return; }
     try {
