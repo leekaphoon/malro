@@ -20,7 +20,7 @@ const LS = {
   cid: 'malro.clientId', lists: 'malro.lists', tasks: 'malro.tasks',
   view: 'malro.view', theme: 'malro.theme', skin: 'malro.skin', defaultList: 'malro.defaultList',
   queue: 'malro.queue', showDone: 'malro.showDone', boardBy: 'malro.boardBy', collapsed: 'malro.collapsed',
-  token: 'malro.token', sortBy: 'malro.sortBy', account: 'malro.account'
+  token: 'malro.token', sortBy: 'malro.sortBy', account: 'malro.account', zoom: 'malro.zoom'
 };
 
 /* 정렬 기준 — 앱 전체에 하나로 적용된다(뷰별로 따로 두지 않는다).
@@ -52,6 +52,8 @@ const I = {
   sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 0 0 6.2 6.2L4 8.4"/><path d="M4 4.5v4h4"/><path d="M4 12.5a8 8 0 0 0 13.8 5.3L20 15.6"/><path d="M20 19.5v-4h-4"/></svg>',
   theme: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 0 1 9.7 3.5a8.6 8.6 0 1 0 10.8 10.8Z"/></svg>',
   skin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor" stroke="none"/></svg>',
+  /* 글자 크기 — 큰 A + 작은 A. 텍스트 크기 조절의 관용 아이콘이다. */
+  textsize: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><text x="1.5" y="19" font-size="15" font-weight="600" font-family="system-ui,sans-serif">A</text><text x="13" y="19" font-size="10" font-weight="600" font-family="system-ui,sans-serif">A</text></svg>',
   sort: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5h15M6.5 12h11M9.5 17.5h5"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
   clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.4V12l3 1.8"/></svg>',
@@ -1395,7 +1397,7 @@ function setView(v) {
 function wire() {
   $('menuBtn').innerHTML = I.menu; $('syncBtn').innerHTML = I.sync;
   $('themeBtn').innerHTML = I.theme; $('sortBtn').innerHTML = I.sort;
-  $('skinBtn').innerHTML = I.skin;
+  $('skinBtn').innerHTML = I.skin; $('sizeBtn').innerHTML = I.textsize;
   $('dtClose').innerHTML = I.close; $('dtDelete').innerHTML = I.trash;
 
   $('menuBtn').onclick = () => { $('sidebar').classList.add('on'); $('scrim').classList.add('on'); };
@@ -1427,6 +1429,13 @@ function wire() {
     applySkin(next);
     store.set(LS.skin, next);
     toast(next ? '야상 — 테마 설정과 무관하게 어둡습니다' : '기본 모양');
+  };
+  /* 글자 크기 — 보통 → 크게 → 더 크게 를 돌린다. 이 기기에만 저장된다. */
+  $('sizeBtn').onclick = () => {
+    const cur = store.get(LS.zoom) || '1';
+    const next = ZOOMS[(ZOOMS.indexOf(cur) + 1) % ZOOMS.length] || '1';
+    applyZoom(next); store.set(LS.zoom, next);
+    toast('글자 크기 · ' + ZOOM_LABEL[next]);
   };
   $('boardBy').innerHTML = I.board;
   $('boardBy').onclick = () => {
@@ -1572,8 +1581,17 @@ function applySkin(v) {
   });
 }
 
+/* 글자 크기 — CSS zoom 으로 전체를 확대한다. 뷰포트 배율(initial-scale)과 달리
+   zoom 은 레이아웃을 배율만큼 다시 흘려서 가로 스크롤이 생기지 않는다. iOS 웹앱은
+   실행할 때마다 핀치 배율을 잊으므로, 이렇게 저장해 두면 매번 다시 키울 필요가 없다.
+   기기별 취향이라 localStorage 에만 둔다(서버로 안 보낸다). */
+function applyZoom(v) { document.documentElement.style.zoom = (v && v !== '1') ? v : ''; }
+const ZOOMS = ['1', '1.15', '1.3'];
+const ZOOM_LABEL = { '1': '보통', '1.15': '크게', '1.3': '더 크게' };
+
 const th = store.get(LS.theme); if (th && !DEMO) document.documentElement.setAttribute('data-theme', th);
 const sk = store.get(LS.skin); if (sk && !DEMO) applySkin(sk);
+const zm = store.get(LS.zoom); if (zm) applyZoom(zm);
 wire();
 render();
 initAuth();
