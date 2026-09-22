@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-FILES=(index.html core.js app.js dnd.js ai.js sw.js manifest.webmanifest
+FILES=(index.html privacy.html core.js app.js dnd.js ai.js sw.js manifest.webmanifest
        icon-180.png icon-192.png icon-512.png icon-maskable.png)
 
 rm -rf dist && mkdir -p dist
