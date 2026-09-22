@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Malro</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -102,6 +102,10 @@ body{
   overscroll-behavior:none;
 }
 button,input,textarea,select{font:inherit;color:inherit;background:none;border:none;outline:none}
+/* 터치 기기에서 입력칸은 16px 이상이어야 iOS 가 포커스 때 자동 확대를 하지 않는다.
+   뷰포트에서 user-scalable=no 를 뺐으므로(핀치 줌 허용), 이 규칙이 없으면
+   입력칸을 탭할 때마다 화면이 확 커졌다 안 돌아온다. */
+@media (hover:none){ input,textarea,select{font-size:16px} }
 button{cursor:pointer}
 ::selection{background:var(--accent);color:#fff}
 .hide{display:none!important}
