@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Malro (말로) — 말로 쓰는 할 일 · Google Tasks 위의 한국어 태스크 앱</title>
+<meta name="description" content="Malro 는 Google Tasks 위에 올린 한국어 할 일 앱입니다. 서버가 없어 데이터는 사용자 본인의 Google Tasks 에만 저장됩니다. 우선순위·라벨·반복·보드, 그리고 선택형 AI 어시스턴트와 시리 음성 입력을 지원합니다.">
+<style>
+  :root{ --bg:#fbfaf9; --surface:#fff; --surface-2:#f5f3f1; --text:#1c1a19; --text-2:#57514d;
+    --muted:#8e8681; --border:#e9e5e1; --accent:#c8453c; --accent-text:#fff; --r:14px; }
+  @media (prefers-color-scheme:dark){ :root{ --bg:#191817; --surface:#232120; --surface-2:#2b2927;
+    --text:#eeeae7; --text-2:#b9b2ac; --muted:#8d857f; --border:#312e2b; --accent:#e0605a; } }
+  *{box-sizing:border-box}
+  body{ margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",system-ui,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:760px; margin:0 auto; padding:0 22px }
+  header{ display:flex; align-items:center; gap:11px; padding:22px 0 }
+  .logo{ width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,var(--accent),#8f2a24);
+    display:grid;place-items:center;color:#fff;font-weight:700;font-size:19px }
+  .brand{ font-weight:680; font-size:18px; letter-spacing:-.02em }
+  header nav{ margin-left:auto; display:flex; gap:16px; font-size:13.5px }
+  header nav a{ color:var(--text-2); text-decoration:none }
+  header nav a:hover{ color:var(--text) }
+  .hero{ padding:34px 0 10px }
+  .hero h1{ font-size:34px; line-height:1.2; letter-spacing:-.03em; margin:0 0 12px }
+  .hero .lede{ font-size:17px; color:var(--text-2); margin:0 0 26px }
+  .cta{ display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:var(--accent-text);
+    text-decoration:none; font-weight:640; font-size:15.5px; padding:13px 22px; border-radius:11px }
+  .cta.ghost{ background:transparent; color:var(--accent); border:1px solid var(--border); font-weight:560 }
+  .cta-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+  .note{ font-size:12.5px; color:var(--muted); margin-top:14px }
+  section{ padding:34px 0; border-top:1px solid var(--border) }
+  h2{ font-size:20px; letter-spacing:-.02em; margin:0 0 18px }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px }
+  @media (max-width:560px){ .grid{ grid-template-columns:1fr } .hero h1{ font-size:28px } }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:16px 18px }
+  .card h3{ margin:0 0 6px; font-size:15.5px }
+  .card p{ margin:0; font-size:13.5px; color:var(--text-2) }
+  .data li{ font-size:14.5px; color:var(--text-2); margin:6px 0 }
+  .en{ color:var(--text-2); font-size:14.5px }
+  footer{ padding:30px 0 60px; border-top:1px solid var(--border); color:var(--muted); font-size:12.5px }
+  footer a{ color:var(--muted) }
+  a.inl{ color:var(--accent) }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">M</div>
+    <div class="brand">Malro</div>
+    <nav>
+      <a href="#features">기능</a>
+      <a href="#data">데이터</a>
+      <a href="./privacy.html">개인정보</a>
+      <a href="https://github.com/leekaphoon/malro">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>말로 쓰는 할 일.<br>내 Google Tasks 위에서.</h1>
+    <p class="lede">Malro(말로)는 Google Tasks 를 그대로 쓰는 한국어 할 일 앱입니다.
+      우선순위·라벨·반복·보드를 얹었고, 데이터는 <b>당신 자신의 Google 계정</b>에만 저장됩니다 —
+      저희 서버는 없습니다.</p>
+    <div class="cta-row">
+      <a class="cta" href="https://malro.app/">앱 시작하기 →</a>
+      <a class="cta ghost" href="./privacy.html">개인정보처리방침</a>
+    </div>
+    <div class="note">Google 계정으로 로그인하면 바로 사용합니다. 설치·회원가입 없음.</div>
+  </div>
+
+  <section id="features">
+    <h2>무엇을 하나</h2>
+    <div class="grid">
+      <div class="card"><h3>우선순위·라벨·기한</h3><p>Google Tasks 의 5개 필드 위에 우선순위, 라벨, 시각, 반복을 얹어 실무용 태스크 매니저로 씁니다.</p></div>
+      <div class="card"><h3>보드·정렬</h3><p>목록·우선순위·기한 기준의 보드 뷰, 등록일·마감일·중요도 정렬. 오늘·예정·전체 보기.</p></div>
+      <div class="card"><h3>AI 어시스턴트 (선택)</h3><p>자신의 Gemini API 키를 설정에 넣으면, 말로 지시해 할 일을 만들고 정리합니다. 키는 이 브라우저에만 저장됩니다.</p></div>
+      <div class="card"><h3>시리 음성 (선택)</h3><p>아이폰에서 앱을 열지 않고도 시리로 할 일을 추가·조회합니다. (별도 설정 필요)</p></div>
+    </div>
+  </section>
+
+  <section id="data">
+    <h2>데이터는 어떻게 다루나</h2>
+    <ul class="data">
+      <li><b>서버가 없습니다.</b> 브라우저가 Google 에 직접 요청하며, 저희가 운영하는 서버에는 아무것도 저장되지 않습니다.</li>
+      <li>할 일은 <b>당신의 Google Tasks</b> 안에만 있습니다. 로그인 토큰·캐시·설정만 이 기기에 남습니다.</li>
+      <li>요청하는 권한은 <b>Google Tasks 하나뿐</b>입니다 — 할 일을 읽고, 만들고, 수정하기 위해서.</li>
+      <li>추적·광고·제3자 쿠키를 쓰지 않습니다. 자세한 내용은 <a class="inl" href="./privacy.html">개인정보처리방침</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>About Malro (English)</h2>
+    <p class="en"><b>Malro</b> is a Korean-language task app built on Google Tasks. It adds priority,
+      labels, recurrence and a board view on top of Google Tasks. <b>There is no server of ours</b> —
+      your browser talks to Google directly, and your tasks stay in your own Google account. Malro
+      requests only the Google Tasks scope, to read, create and edit your tasks. An optional AI
+      assistant works with your own Gemini API key (stored only in your browser). See the
+      <a class="inl" href="./privacy.html">Privacy Policy</a>. Open source at
+      <a class="inl" href="https://github.com/leekaphoon/malro">github.com/leekaphoon/malro</a>.</p>
+    <div class="cta-row" style="margin-top:18px">
+      <a class="cta" href="https://malro.app/">Open the app →</a>
+    </div>
+  </section>
+
+  <footer>
+    Malro — an open-source personal project. Data stays in your own Google Tasks.<br>
+    <a href="./privacy.html">개인정보처리방침 / Privacy</a> ·
+    <a href="https://github.com/leekaphoon/malro">GitHub</a>
+  </footer>
+
+</div>
+</body>
+</html>
