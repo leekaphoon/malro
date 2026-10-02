@@ -16,14 +16,14 @@
 <style>
 /* ─────────────────────────  design tokens  ───────────────────────── */
 :root{
-  --bg:#fbfaf9; --surface:#ffffff; --surface-2:#f5f3f1; --surface-3:#eeebe8;
-  --text:#1c1a19; --text-2:#57514d; --muted:#8e8681; --faint:#b5aea9;
-  --border:#e9e5e1; --border-strong:#d9d3cd;
-  --accent:#c8453c; --accent-soft:#fdf1f0; --accent-text:#ffffff;
-  --p1:#d1453b; --p2:#e08b18; --p3:#2a6fd4; --p4:#a8a29e;
-  --ok:#3f9c5b; --shadow-sm:0 1px 2px rgba(28,26,25,.05),0 1px 3px rgba(28,26,25,.04);
-  --shadow-md:0 4px 12px rgba(28,26,25,.07),0 1px 3px rgba(28,26,25,.05);
-  --shadow-lg:0 16px 40px rgba(28,26,25,.14),0 3px 10px rgba(28,26,25,.07);
+  --bg:#fbfcfd; --surface:#ffffff; --surface-2:#f2f6f8; --surface-3:#e7eef2;
+  --text:#13202a; --text-2:#4e5e6a; --muted:#7c8a94; --faint:#abb6bd;
+  --border:#e7edf1; --border-strong:#d4dde3;
+  --accent:#0a8f87; --accent-soft:#e2f5f3; --accent-text:#ffffff; --accent-2:#0a5f5b;
+  --p1:#d1453b; --p2:#e08b18; --p3:#2a6fd4; --p4:#9aa6ad;
+  --ok:#1f9d57; --shadow-sm:0 1px 2px rgba(20,30,40,.05),0 1px 3px rgba(20,30,40,.04);
+  --shadow-md:0 4px 12px rgba(20,30,40,.07),0 1px 3px rgba(20,30,40,.05);
+  --shadow-lg:0 16px 40px rgba(20,30,40,.13),0 3px 10px rgba(20,30,40,.07);
   --r-sm:7px; --r:11px; --r-lg:16px;
   --sidebar-w:268px;
   /* 보드 컬럼 치수 — 한 곳에서 관리한다 (2026-08: 폭·높이 1.3배로 상향) */
@@ -36,11 +36,11 @@
    data-theme="light" 가 찍혀 있으면 OS 가 다크여도 라이트가 이긴다. */
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#191817; --surface:#232120; --surface-2:#2b2927; --surface-3:#35322f;
-    --text:#eeeae7; --text-2:#b9b2ac; --muted:#8d857f; --faint:#655e59;
-    --border:#312e2b; --border-strong:#413d39;
-    --accent:#e0605a; --accent-soft:#3a2422; --accent-text:#ffffff;
-    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#7c7570;
+    --bg:#0f1519; --surface:#161d22; --surface-2:#141b20; --surface-3:#202830;
+    --text:#e7edf1; --text-2:#aab6be; --muted:#8795a0; --faint:#5f6d77;
+    --border:#243039; --border-strong:#33414b;
+    --accent:#2dd4cf; --accent-soft:#113230; --accent-text:#0b1517; --accent-2:#13605c;
+    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#8795a0;
     --ok:#5cb87a;
     --shadow-sm:0 1px 2px rgba(0,0,0,.3);
     --shadow-md:0 4px 14px rgba(0,0,0,.4);
@@ -49,11 +49,11 @@
   }
 }
 :root[data-theme="dark"]{
-    --bg:#191817; --surface:#232120; --surface-2:#2b2927; --surface-3:#35322f;
-    --text:#eeeae7; --text-2:#b9b2ac; --muted:#8d857f; --faint:#655e59;
-    --border:#312e2b; --border-strong:#413d39;
-    --accent:#e0605a; --accent-soft:#3a2422; --accent-text:#ffffff;
-    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#7c7570;
+    --bg:#0f1519; --surface:#161d22; --surface-2:#141b20; --surface-3:#202830;
+    --text:#e7edf1; --text-2:#aab6be; --muted:#8795a0; --faint:#5f6d77;
+    --border:#243039; --border-strong:#33414b;
+    --accent:#2dd4cf; --accent-soft:#113230; --accent-text:#0b1517; --accent-2:#13605c;
+    --p1:#e0605a; --p2:#e5a13f; --p3:#5b93e6; --p4:#8795a0;
     --ok:#5cb87a;
     --shadow-sm:0 1px 2px rgba(0,0,0,.3);
     --shadow-md:0 4px 14px rgba(0,0,0,.4);
@@ -76,7 +76,7 @@
   --bg:#15171b; --surface:#1e2126; --surface-2:#191c20; --surface-3:#262a31;
   --text:#e7eaed; --text-2:#b6bdc5; --muted:#98a0a9; --faint:#6d757e;
   --border:#2b2f36; --border-strong:#3a3f47;
-  --accent:#c9873c; --accent-soft:#2a2219; --accent-text:#17191d;
+  --accent:#c9873c; --accent-soft:#2a2219; --accent-text:#17191d; --accent-2:#8a5a22;
   /* P2 는 강조와 같은 계열이지만 같은 값이면 안 된다. 기본 팔레트가 accent(#c8453c)와
      p1(#d1453b)을 사실상 같은 색으로 써서 둘 다 안 보이던 문제를 여기서 반복하지 않는다.
      명도와 채도를 벌려 "강조는 깊은 호박, 경고는 밝은 금" 으로 갈라 놓는다. */
@@ -121,7 +121,7 @@ button{cursor:pointer}
   transition:transform .34s var(--ease);z-index:40;
 }
 .sb-head{display:flex;align-items:center;gap:9px;padding:16px 16px 12px}
-.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(145deg,var(--accent),#8f2a24);
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(145deg,var(--accent),var(--accent-2));
   display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;letter-spacing:0;flex:0 0 auto;
   box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .brand{font-weight:640;font-size:15.5px;letter-spacing:-.02em}
@@ -506,14 +506,14 @@ body.dragging-active{user-select:none;-webkit-user-select:none;-webkit-touch-cal
   padding-top:calc(12px + env(safe-area-inset-top))}
 .chat-head .nm{flex:1;font-size:14.5px;font-weight:640;letter-spacing:-.015em}
 .ci-sm{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:#fff;
-  background:linear-gradient(145deg,var(--accent),#8f2a24)}
+  background:linear-gradient(145deg,var(--accent),var(--accent-2))}
 .ci-sm svg{width:15px;height:15px}
 
 .chat-body{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:10px;
   -webkit-overflow-scrolling:touch}
 .chat-empty{margin:auto;text-align:center;padding:20px 8px;color:var(--muted)}
 .chat-empty .ci{width:44px;height:44px;margin:0 auto 14px;border-radius:13px;display:grid;place-items:center;
-  color:#fff;background:linear-gradient(145deg,var(--accent),#8f2a24);box-shadow:var(--shadow-md)}
+  color:#fff;background:linear-gradient(145deg,var(--accent),var(--accent-2));box-shadow:var(--shadow-md)}
 .chat-empty .ci svg{width:24px;height:24px}
 .chat-empty p{font-size:15px;font-weight:600;color:var(--text);letter-spacing:-.02em}
 .chat-empty .sm{font-size:12.5px;margin-top:8px;line-height:1.65;color:var(--faint)}
